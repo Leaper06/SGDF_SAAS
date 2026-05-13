@@ -1,0 +1,12 @@
+Bonjour tout le monde, 
+J'espère que vous allez bien !
+J'ai comme projet de monter de monter un site web / application qui a pour but d'aider les mairies et les équipiés de groupe au quotidien. Car pour l'instant la plupart des groupes fonctionnent avec des solutions de drive partagé ou autre, mais ce n'est pas optimisé et niveau protection des données ce n'est pas du tout ça.
+Pour l'instant j'ai comme idée de fonctionnalité : 
+- une liste des lieux avec commentaire, contact etc centralisée par groupe
+- un endroit où regrouper toutes les fiches sanitaires avec un système simple pour les rentrer 
+- la préparation des week-ends centralisée (date, planning de la journée / du week-end, menu etc)
+- gestion du matos avec un système de ticket / alerte en cas de casse pour simplifier la gestion du matériel 
+pour l'instant ce ne sont que des idées j'ai besoin de VOUS pour m'apporter vos idée pour que cet outil soit le plus calqué possible sur vos besoin ! 
+voici un formulaire a remplire si vous voulez m'aider dans ce projet.
+Merciiii 
+Loïc 
