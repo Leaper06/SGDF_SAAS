@@ -14,7 +14,7 @@ nouvel onglet dans activité trié par date avec comme nom acvité ou temps spi 
 par exemple activité-samedi-09h15 ou temps spi-dimanche-11h00
 
 
-plannig : 
+calandrier : 
 Le but de cette page est d'avoir un calendrier partager avec les chefs (on verra ça plus tard) mais en tous car que les chefs puisse positionner les week-end / journée scout dessus et que ce soit marqué, un peu comme sur google calandar. En suite le but c'est en cliquant sur un week-end d'arriver sur la page ou on gère ce week-end. may be synchro avec un google calandar ou i canlandar.
 
 repas : 
@@ -70,3 +70,16 @@ L'application fusionne tous les repas du week-end et regroupe les ingrédients s
 L'astuce terrain : La liste générée doit être triée par rayon de supermarché (Fruits/Légumes, Frais, Sec, Surgelés, Droguerie). C'est un gain de temps monumental au moment de faire les courses.
 
 Le bouton "Rab" : Un petit slider en haut de la liste de courses "Marge de sécurité : +10%" pour augmenter toutes les quantités d'un coup (les chefs achètent toujours un peu plus au cas où).
+
+
+tréso :
+onglet tréso avec menu déroulant case a cocher : 
+- bouffe
+- pedage
+- défraiement kilométrique 
+
+somme a chaque fois 
+
+unité : 
+quel progression perso a choissi le jeunes
+trié par équipe 

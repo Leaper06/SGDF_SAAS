@@ -12,7 +12,8 @@
                     colors: { 
                         scoutViolet: '#5b2b82', 
                         scoutOrange: '#e45a27',
-                        bgLight: '#f8fafc'
+                        scoutBlue: '#004267', /* Le bleu de votre bannière */
+                        bgLight: '#ffffff' /* Fond blanc original */
                     }
                 }
             }
@@ -21,8 +22,15 @@
 </head>
 <body class="bg-gray-300 flex justify-center p-10 font-sans">
 
-    <div class="w-[390px] h-[844px] bg-bgLight relative overflow-hidden shadow-2xl flex flex-col">
+    <div class="w-[390px] h-[900px] bg-bgLight relative overflow-hidden shadow-2xl flex flex-col">
         
+        <div class="bg-scoutBlue text-white pt-5 pb-3 px-6 rounded-b-[40px] shadow-lg z-10 flex-none relative">
+            <div class="w-full text-center mb-1">
+                <h1 class="text-2xl font-bold tracking-wide">PolyMaîtrise</h1>
+            </div>
+            <p class="text-center text-blue-100 text-sm font-medium mt-1">Fiche d'activité</p>
+        </div>
+
         <div class="bg-white px-4 py-4 shadow-sm z-20 flex justify-between items-center sticky top-0">
             <button class="text-gray-500 hover:text-gray-800 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +49,7 @@
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 pb-28">
             
             <div>
                 <input type="text" value="Grand Jeu de Piste" class="w-full text-3xl font-extrabold text-gray-900 bg-transparent border-none focus:ring-0 p-0 placeholder-gray-300" placeholder="Titre de l'activité...">
@@ -144,7 +152,27 @@
             </div>
 
         </div>
+        
+        <div class="absolute bottom-0 w-full bg-white border-t border-gray-100 px-6 py-4 flex justify-between items-center shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] pb-4 z-20">
+            <div class="flex flex-col items-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="text-[10px] font-bold mt-1">Unité</span>
+            </div>
+            <div class="flex flex-col items-center text-scoutViolet">            
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-[10px] mt-1">Camps</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                <span class="text-[10px] mt-1">Matériel</span>
+            </div>
+            <div class="flex flex-col items-center text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-[10px] mt-1">Profil</span>
+            </div>
+        </div>
     </div>
+    
 
 </body>
 </html>

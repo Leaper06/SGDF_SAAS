@@ -1,12 +1,13 @@
-Bonjour tout le monde, 
-J'espère que vous allez bien !
-J'ai comme projet de monter de monter un site web / application qui a pour but d'aider les mairies et les équipiés de groupe au quotidien. Car pour l'instant la plupart des groupes fonctionnent avec des solutions de drive partagé ou autre, mais ce n'est pas optimisé et niveau protection des données ce n'est pas du tout ça.
+Bonjour tout le monde, J'espère que vous allez bien !
+Si vous ne me connaissez pas moi c'est Loïc SGDF depuis 12 ans et étudiant en informatique. 
+J'ai comme projet de monter de monter un site web / application qui a pour but d'aider les maitrises et les équipiés de groupe au quotidien. Car pour l'instant la plupart des groupes fonctionnent avec des solutions de drive partagé ou autre, mais ce n'est pas optimisé et niveau protection des données ce n'est pas du touuuuuut ça.
 Pour l'instant j'ai comme idée de fonctionnalité : 
-- une liste des lieux avec commentaire, contact etc centralisée par groupe
+- une liste des lieux avec commentaire, contact etc, centralisée par groupe
 - un endroit où regrouper toutes les fiches sanitaires avec un système simple pour les rentrer 
 - la préparation des week-ends centralisée (date, planning de la journée / du week-end, menu etc)
 - gestion du matos avec un système de ticket / alerte en cas de casse pour simplifier la gestion du matériel 
 pour l'instant ce ne sont que des idées j'ai besoin de VOUS pour m'apporter vos idée pour que cet outil soit le plus calqué possible sur vos besoin ! 
-voici un formulaire a remplire si vous voulez m'aider dans ce projet.
+Voici un formulaire a remplire si vous voulez m'aider dans ce projet, hésitez pas a partager ce message a vos groupes/ contact le but c'est d'avoir un max d'idée !
+https://forms.gle/anbzxLKSibDVuR7L7
 Merciiii 
 Loïc 
