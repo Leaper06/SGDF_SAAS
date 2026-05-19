@@ -2,6 +2,8 @@ import os
 import uuid
 import logging
 from flask import Flask, request, jsonify
+from database import get_db
+from flask_cors import CORS
 
 # Import de tes services métiers
 from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session
@@ -10,7 +12,7 @@ from services.sgdf_adherents import scrape_liste_adherents
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
-
+CORS(app)  # Permet les requêtes cross-origin (utile pour le frontend qui tourne sur un autre port)
 # NOTRE BASE DE DONNÉES TEMPORAIRE (En mémoire)
 # Elle va stocker les objets 'requests.Session' associés à un Token unique
 ACTIVE_SESSIONS = {}
@@ -88,6 +90,51 @@ def get_adherents():
         "data": adherents_data
     }), 200
 
+@app.route('/api/test-db', methods=['GET'])
+def test_database():
+    """Route de test pour vérifier la connexion à Supabase."""
+    db = get_db()
+    try:
+        # On tente de récupérer juste une ligne de la table 'units' pour voir si ça répond
+        response = db.table('units').select('*').limit(1).execute()
+        return jsonify({
+            "status": "success", 
+            "message": "Connexion à la base de données réussie.",
+            "data": response.data
+        }), 200
+    except Exception as e:
+        logging.error(f"Erreur de connexion DB: {e}")
+        return jsonify({
+            "status": "error", 
+            "message": "Impossible de se connecter à la base de données."
+        }), 500
+
+@app.route('/api/camps', methods=['GET'])
+def get_all_camps():
+    """
+    Route pour récupérer la liste de tous les camps/week-ends planifiés.
+    Trié par ordre chronologique (du plus proche au plus lointain).
+    """
+    db = get_db()
+    try:
+        logging.info("Requête de récupération de la liste des camps...")
+        
+        # CORRECTION ICI : on utilise desc=False pour l'ordre croissant (un ordre ascendant)
+        response = db.table('camps').select('*').order('start_date', desc=False).execute()
+        
+        return jsonify({
+            "status": "success",
+            "count": len(response.data),
+            "data": response.data
+        }), 200
+
+    except Exception as e:
+        logging.error(f"Erreur lors de la récupération des camps : {e}")
+        return jsonify({
+            "status": "error",
+            "message": "Impossible de charger le calendrier."
+        }), 500
+    
 if __name__ == '__main__':
     # On lance le serveur Flask sur le port 5000
     logging.info("Démarrage du serveur Flask...")
