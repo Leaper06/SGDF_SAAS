@@ -732,6 +732,7 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              
                 <div class="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
                     <h3 class="font-bold text-gray-800">Composition du menu</h3>
                     <span class="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase tracking-wide">
@@ -739,44 +740,25 @@
                     </span>
                 </div>
 
-                <div class="flex items-center justify-between py-2 border-b border-gray-50">
+                <div v-for="(recipe, index) in currentMealRecipes" :key="recipe.id || index" class="flex items-center justify-between py-2 border-b border-gray-50">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">🥗</div>
+                        <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-sm', getRecipeIcon(recipe.dish_type).bg, getRecipeIcon(recipe.dish_type).text]">
+                            {{ getRecipeIcon(recipe.dish_type).emoji }}
+                        </div>
                         <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase">Entrée</p>
-                            <p class="text-sm font-medium text-gray-900">Carottes râpées vinaigrette</p>
+                            <p class="text-xs text-gray-400 font-bold uppercase">{{ recipe.dish_type }}</p>
+                            <p class="text-sm font-medium text-gray-900">{{ recipe.name }}</p>
                         </div>
                     </div>
+                    <button @click="retirerRecette(index, recipe.id)" class="text-gray-300 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-scoutOrange">🍝</div>
-                        <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase">Plat</p>
-                            <p class="text-sm font-medium text-gray-900">Pâtes Bolognaise</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between py-2 border-b border-gray-50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center">🧀</div>
-                        <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase">Fromage</p>
-                            <p class="text-sm font-medium text-gray-900">Camembert & Pain</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between py-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">🍏</div>
-                        <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase">Dessert</p>
-                            <p class="text-sm font-medium text-gray-900">Pommes (vrac)</p>
-                        </div>
-                    </div>
+                <div v-if="currentMealRecipes.length === 0" class="py-6 text-center">
+                    <p class="text-sm text-gray-400 italic font-medium">Ce menu est vide. Ajoute un plat !</p>
                 </div>
 
                 <button @click="currentView = 'recipe_catalog'" class="w-full mt-4 border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm font-medium text-gray-500 hover:border-scoutViolet hover:text-scoutViolet transition-colors flex justify-center items-center gap-2">
@@ -838,8 +820,8 @@
                         <span v-if="recipe.is_eco" class="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Éco</span>
                     </div>
                 </div>
-                <button class="w-8 h-8 rounded-full bg-violet-50 text-[#5b2b82] flex items-center justify-center hover:bg-[#5b2b82] hover:text-white transition-colors">
-                    <span class="font-bold text-xl leading-none mb-1">+</span>
+                <button @click="ajouterRecetteAuMenu(recipe)" class="w-8 h-8 rounded-full bg-violet-50 text-[#5b2b82] flex items-center justify-center hover:bg-[#5b2b82] hover:text-white transition-colors">
+                  <span class="font-bold text-xl leading-none mb-1">+</span>
                 </button>
             </div>
             
@@ -983,33 +965,22 @@ import { ref, computed, onMounted } from 'vue'
 const searchQuery = ref('')
 const selectedFilter = ref('Tous')
 
-// Quelques recettes pour tester l'interface en attendant de brancher la base de données
-const recipesList = ref([
-  {
-    id: 1,
-    name: "Salade de chèvre chaud",
-    type: "Entrée froide",
-    is_vegetarian: true,
-    is_pork_free: true,
-    is_eco: false
-  },
-  {
-    id: 2,
-    name: "Pâtes Bolognaise",
-    type: "Plat chaud",
-    is_vegetarian: false,
-    is_pork_free: false,
-    is_eco: true
-  },
-  {
-    id: 3,
-    name: "Dahl de Lentilles Corail",
-    type: "Plat chaud",
-    is_vegetarian: true,
-    is_pork_free: true,
-    is_eco: true
+
+// On initialise la liste vide, elle sera remplie par la base de données
+const recipesList = ref([])
+
+// Fonction pour récupérer les VRAIES recettes depuis Flask
+const chargerCatalogueRecettes = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/recipes')
+    const json = await response.json()
+    if (json.status === 'success') {
+      recipesList.value = json.data
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement des recettes :", error)
   }
-])
+}
 
 // Fonction pour filtrer dynamiquement les recettes
 const filteredRecipes = computed(() => {
@@ -1063,17 +1034,42 @@ const ajouterIngredientRecette = () => {
 const supprimerIngredientRecette = (index) => {
   newRecipe.value.ingredients.splice(index, 1)
 }
-
-const partagerRecette = () => {
+  
+const partagerRecette = async () => {
+  // Petite vérification de sécurité
   if (!newRecipe.value.name) {
     alert("Il faut au moins donner un nom à cette délicieuse recette !")
     return
   }
   
-  alert("C'est ici que la recette partira dans la base de données Flask !")
-  // Pour l'instant on simule un retour au catalogue
-  currentView.value = 'recipe_catalog'
+  try {
+    // On envoie tout le dictionnaire 'newRecipe' à Flask
+    const response = await fetch('http://localhost:5000/api/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRecipe.value)
+    })
+    
+    const json = await response.json()
+    
+    if (json.status === 'success') {
+      // Magie ! On recharge le catalogue pour qu'il inclue ce nouveau plat
+      chargerCatalogueRecettes()
+      
+      // On ramène l'utilisateur sur le catalogue pour voir le résultat
+      currentView.value = 'recipe_catalog'
+      
+      // Optionnel: Un petit message visuel
+      console.log("Recette partagée avec succès !")
+    } else {
+      console.error("Erreur du serveur :", json.message)
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'appel API :", error)
+  }
 }
+  
+
 const campsList = ref([])
 const loading = ref(true)
 const currentDate = ref(new Date())
@@ -1114,10 +1110,80 @@ const ouvrirFicheActivite = async (slot) => {
   }
 }
 // --- GESTION DU MENU DES REPAS ---
-const ouvrirMenuRepas = (slot) => {
-  selectedSlot.value = slot
-  currentView.value = 'menu_builder' // Nouvelle vue pour la Maquette 1
+const currentMeal = ref(null)
+const currentMealRecipes = ref([])
+
+// Fonction magique pour donner le bon emoji et la bonne couleur selon le type de plat
+const getRecipeIcon = (type) => {
+  const t = (type || '').toLowerCase()
+  if (t.includes('entrée')) return { emoji: '🥗', bg: 'bg-green-100', text: 'text-green-600' }
+  if (t.includes('plat')) return { emoji: '🍝', bg: 'bg-orange-100', text: 'text-[#e45a27]' }
+  if (t.includes('dessert') || t.includes('fruit')) return { emoji: '🍏', bg: 'bg-blue-100', text: 'text-blue-500' }
+  return { emoji: '🧀', bg: 'bg-yellow-50', text: 'text-yellow-600' }
 }
+
+const ouvrirMenuRepas = async (slot) => {
+  selectedSlot.value = slot
+  currentView.value = 'menu_builder'
+  currentMealRecipes.value = [] // On vide par précaution
+  currentMeal.value = null
+
+  try {
+    // On va chercher le menu associé à ce créneau dans le backend
+    const response = await fetch(`http://localhost:5000/api/planning_slots/${slot.id}/meal`)
+    const json = await response.json()
+    
+    if (json.status === 'success') {
+      currentMeal.value = json.data.meal
+      currentMealRecipes.value = json.data.recipes || []
+    }
+  } catch (error) {
+    console.error("Erreur de chargement du repas :", error)
+  }
+}
+
+// Fonction pour retirer un plat du menu en base de données
+const retirerRecette = async (index, recipe_id) => {
+  if (!currentMeal.value) return
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/meals/${currentMeal.value.id}/recipes/${recipe_id}`, {
+      method: 'DELETE'
+    })
+    const json = await response.json()
+    
+    if (json.status === 'success') {
+      // Si la suppression DB fonctionne, on l'enlève de l'écran
+      currentMealRecipes.value.splice(index, 1)
+    }
+  } catch (error) {
+    console.error("Erreur lors de la suppression du plat :", error)
+  }
+}
+
+// Nouvelle fonction pour ajouter un plat au menu en base de données
+const ajouterRecetteAuMenu = async (recipe) => {
+  if (!currentMeal.value) return
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/meals/${currentMeal.value.id}/recipes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipe_id: recipe.id })
+    })
+    const json = await response.json()
+    
+    if (json.status === 'success') {
+      // On l'ajoute visuellement et on retourne sur la Maquette 1
+      currentMealRecipes.value.push(recipe)
+      currentView.value = 'menu_builder'
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du plat :", error)
+  }
+}
+
+
 
 const fermerMenuRepas = () => {
   selectedSlot.value = null
@@ -1276,7 +1342,9 @@ const fetchCamps = async () => {
   }
 }
 
-onMounted(() => fetchCamps())
+onMounted(() => {fetchCamps()
+  chargerCatalogueRecettes()
+})
 
 // --- GESTION DES MENUS ET ACTIONS ---
 

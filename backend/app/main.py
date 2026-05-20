@@ -342,6 +342,169 @@ def save_activity(activity_id):
     except Exception as e:
         print("Erreur lors de la sauvegarde :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+    # ==========================================
+# --- ROUTES POUR L'INTENDANCE (RECETTES) ---
+# ==========================================
+
+@app.route('/api/recipes', methods=['GET'])
+def get_recipes():
+    """Récupère tout le catalogue de recettes depuis Supabase"""
+    try:
+        db = get_db()
+        recipes_res = db.table('recipes').select('*').execute()
+        
+        return jsonify({"status": "success", "data": recipes_res.data}), 200
+
+    except Exception as e:
+        print("Erreur lors de la récupération des recettes :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+@app.route('/api/planning_slots/<slot_id>/meal', methods=['GET'])
+def get_slot_meal(slot_id):
+    """Récupère le repas associé à un créneau (ou le crée s'il n'existe pas)"""
+    try:
+        db = get_db()
+        
+        # 1. On cherche si un repas est déjà enregistré pour ce créneau de planning
+        meal_res = db.table('meals').select('*').eq('planning_slot_id', slot_id).execute()
+        
+        if not meal_res.data:
+            # Si aucun repas n'existe encore pour ce créneau, on le crée silencieusement !
+            new_meal = db.table('meals').insert({
+                "planning_slot_id": slot_id, 
+                "additional_guests": 0
+            }).execute()
+            meal = new_meal.data[0]
+        else:
+            meal = meal_res.data[0]
+            
+        meal_id = meal['id']
+        
+        # 2. On récupère les recettes liées à ce repas grâce à la table de jointure meal_recipes
+        # Supabase permet de faire la jointure directement dans le select
+        jointure_res = db.table('meal_recipes').select('recipe_id, recipes(*)').eq('meal_id', meal_id).execute()
+        
+        # On extrait proprement la liste des recettes reçues
+        recipes = []
+        if jointure_res.data:
+            for item in jointure_res.data:
+                if item.get('recipes'):
+                    recipes.append(item['recipes'])
+        
+        # On renvoie le tout structuré pour notre Front-end Vue.js
+        return jsonify({
+            "status": "success",
+            "data": {
+                "meal": meal,
+                "recipes": recipes
+            }
+        }), 200
+
+    except Exception as e:
+        print("Erreur lors de la récupération du repas :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- ROUTE : AJOUTER UN PLAT À UN REPAS ---
+@app.route('/api/meals/<meal_id>/recipes', methods=['POST'])
+def add_recipe_to_meal(meal_id):
+    """Associe une recette à un repas dans la table de jointure"""
+    try:
+        db = get_db()
+        data = request.json
+        recipe_id = data.get('recipe_id')
+
+        if not recipe_id:
+            return jsonify({"status": "error", "message": "ID de recette manquant"}), 400
+
+        # On insère l'association dans la table meal_recipes
+        db.table('meal_recipes').insert({
+            "meal_id": meal_id,
+            "recipe_id": recipe_id
+        }).execute()
+
+        return jsonify({"status": "success", "message": "Recette ajoutée au repas"}), 201
+
+    except Exception as e:
+        print("Erreur lors de l'ajout du plat :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# --- ROUTE : RETIRER UN PLAT D'UN REPAS ---
+@app.route('/api/meals/<meal_id>/recipes/<recipe_id>', methods=['DELETE'])
+def remove_recipe_from_meal(meal_id, recipe_id):
+    """Supprime l'association entre une recette et un repas"""
+    try:
+        db = get_db()
+        
+        # On supprime la ligne correspondante dans meal_recipes
+        db.table('meal_recipes').delete().eq('meal_id', meal_id).eq('recipe_id', recipe_id).execute()
+
+        return jsonify({"status": "success", "message": "Recette retirée du repas"}), 200
+
+    except Exception as e:
+        print("Erreur lors de la suppression du plat :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- ROUTE : CRÉER UNE NOUVELLE RECETTE ---
+@app.route('/api/recipes', methods=['POST'])
+def create_recipe():
+    """Crée une nouvelle recette et ses ingrédients dans la base de données"""
+    try:
+        db = get_db()
+        data = request.json
+
+        # 1. On prépare les données de la recette principale
+        recipe_data = {
+            "name": data.get('name'),
+            "dish_type": data.get('type'),  # Le front envoie 'type', la DB attend 'dish_type'
+            "instructions": "", 
+            "is_vegetarian": data.get('is_vegetarian', False),
+            "is_eco": data.get('is_eco', False),
+            # On met is_pork_free par défaut pour correspondre à ta structure de base
+            "is_pork_free": True 
+        }
+        
+        # On insère la recette et on récupère son ID généré
+        recipe_res = db.table('recipes').insert(recipe_data).execute()
+        new_recipe_id = recipe_res.data[0]['id']
+
+        # 2. On boucle sur chaque ingrédient envoyé par le formulaire
+        ingredients_list = data.get('ingredients', [])
+        for ing in ingredients_list:
+            ing_name = ing.get('name', '').strip()
+            
+            if not ing_name:
+                continue # On ignore les lignes vides
+            
+            # On cherche si cet ingrédient existe déjà dans le grand catalogue
+            ing_res = db.table('ingredients').select('*').eq('name', ing_name).execute()
+            
+            if not ing_res.data:
+                # S'il n'existe pas, on le crée
+                new_ing = db.table('ingredients').insert({
+                    "name": ing_name,
+                    "category": "Autre", # Catégorie par défaut
+                    "unit_type": "g"     # Unité par défaut
+                }).execute()
+                ingredient_id = new_ing.data[0]['id']
+            else:
+                # S'il existe, on récupère juste son ID
+                ingredient_id = ing_res.data[0]['id']
+            
+            # 3. On lie l'ingrédient à la recette avec les grammages
+            db.table('recipe_ingredients').insert({
+                "recipe_id": new_recipe_id,
+                "ingredient_id": ingredient_id,
+                "qty_child": float(ing.get('qty_child') or 0),
+                "qty_adult": float(ing.get('qty_adult') or 0)
+            }).execute()
+
+        return jsonify({"status": "success", "message": "Recette créée avec succès !"}), 201
+
+    except Exception as e:
+        print("Erreur lors de la création de la recette :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 if __name__ == '__main__':
     # On lance le serveur Flask sur le port 5000
     logging.info("Démarrage du serveur Flask...")
