@@ -1,9 +1,9 @@
 - [ ] Login via API intranet
-- [ ] Création de week-end
-  - [ ] Planning
+- [x] Création de week-end
+  - [x] Planning
   - [ ] Menu
     - [ ] calule de quantité
-  - [ ] Activité
+  - [x] Activité
   - [ ] Jeunes présent
 - [ ] Base de lieu partagé par groupe
 - [ ] fiche sanitaire

@@ -9,8 +9,8 @@ def get_sgdf_cookies(username: str, password: str) -> Optional[List[Dict]]:
     """
     try:
         with sync_playwright() as p:
-            # headless=False temporairement pour voir ce qu'il se passe pendant le test
-            browser = p.chromium.launch(headless=False)
+            
+            browser = p.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()
 

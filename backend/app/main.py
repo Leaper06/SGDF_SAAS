@@ -5,10 +5,13 @@ from flask import Flask, request, jsonify
 from database import get_db
 from flask_cors import CORS
 from flask import request, jsonify 
+import math
+from werkzeug.utils import secure_filename
+from flask import send_from_directory
 
 # Import de tes services métiers
 from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session
-from services.sgdf_adherents import scrape_liste_adherents
+from services.sgdf_adherents import get_logged_in_chef_info, scrape_liste_adherents
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -17,6 +20,13 @@ CORS(app)  # Permet les requêtes cross-origin (utile pour le frontend qui tourn
 # NOTRE BASE DE DONNÉES TEMPORAIRE (En mémoire)
 # Elle va stocker les objets 'requests.Session' associés à un Token unique
 ACTIVE_SESSIONS = {}
+def get_user_session():
+    """Vérifie le token et retourne les infos de session (http, unit_name)"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    return ACTIVE_SESSIONS.get(token)
 
 @app.route('/api/status', methods=['GET'])
 def health_check():
@@ -45,11 +55,20 @@ def login():
     # 2. On crée la session HTTP rapide
     session_http = create_authenticated_session(cookies)
     
-    # 3. On génère un Token unique pour cet utilisateur
+    # 3. On récupère les infos du chef ET l'unité
+    chef_info = get_logged_in_chef_info(session_http)
+    adherents_info = scrape_liste_adherents(session_http)
+    unit_name = adherents_info.get("unit_name", "Unité Inconnue")
+    
     session_token = str(uuid.uuid4())
     
-    # 4. On stocke la session en mémoire
-    ACTIVE_SESSIONS[session_token] = session_http
+    # 4. On stocke tout dans la mémoire !
+    ACTIVE_SESSIONS[session_token] = {
+        "http": session_http,
+        "unit_name": unit_name,
+        "chef_adherent_id": chef_info.get("adherent_id"), # EX: 162821708
+        "chef_email": chef_info.get("email") # EX: loic...gmail.com
+    }
     
     logging.info(f"Connexion réussie. Token généré : {session_token}")
     
@@ -60,35 +79,29 @@ def login():
 
 @app.route('/api/adherents', methods=['GET'])
 def get_adherents():
-    """Route pour récupérer la liste des adhérents (nécessite un token valide)."""
-    # On cherche le token dans les en-têtes de la requête (Headers)
     auth_header = request.headers.get('Authorization')
-    
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Token d'authentification manquant ou mal formaté"}), 401
+        return jsonify({"error": "Token d'authentification manquant"}), 401
         
-    # On extrait le token brut (on enlève "Bearer ")
     token = auth_header.split(" ")[1]
-    
-    # On vérifie si ce token existe dans notre mémoire
     if token not in ACTIVE_SESSIONS:
-        return jsonify({"error": "Token invalide ou session expirée. Veuillez vous reconnecter."}), 401
+        return jsonify({"error": "Token invalide ou session expirée."}), 401
         
     logging.info(f"Requête adhérents autorisée pour le token : {token}")
+    user_session = ACTIVE_SESSIONS[token]["http"]
     
-    # On récupère la session HTTP de cet utilisateur spécifique
-    user_session = ACTIVE_SESSIONS[token]
+    # Récupération du gros dictionnaire {unit_name, adherents}
+    adherents_result = scrape_liste_adherents(user_session)
+    data = adherents_result.get("adherents", [])
+    unit_name = adherents_result.get("unit_name", "Unité")
     
-    # On lance le scraping !
-    adherents_data = scrape_liste_adherents(user_session)
-    
-    if not adherents_data:
-        return jsonify({"error": "Impossible de récupérer les données ou liste vide."}), 500
+    if not data:
+        return jsonify({"error": "Impossible de récupérer les données."}), 500
         
-    # On renvoie les données structurées en JSON
     return jsonify({
-        "count": len(adherents_data) - 1, # -1 pour ne pas compter la ligne des titres
-        "data": adherents_data
+        "unit_name": unit_name,
+        "count": max(0, len(data) - 1),
+        "data": data
     }), 200
 
 @app.route('/api/test-db', methods=['GET'])
@@ -112,55 +125,40 @@ def test_database():
 
 @app.route('/api/camps', methods=['GET'])
 def get_all_camps():
-    """
-    Route pour récupérer la liste de tous les camps/week-ends planifiés.
-    Trié par ordre chronologique (du plus proche au plus lointain).
-    """
+    user_data = get_user_session()
+    if not user_data:
+        return jsonify({"status": "error", "message": "Non autorisé"}), 401
+        
+    unit_name = user_data["unit_name"]
     db = get_db()
     try:
-        logging.info("Requête de récupération de la liste des camps...")
+        # MAGIE : On ne récupère QUE les camps de cette unité !
+        response = db.table('camps').select('*').eq('unit_name', unit_name).order('start_date', desc=False).execute()
         
-        # CORRECTION ICI : on utilise desc=False pour l'ordre croissant (un ordre ascendant)
-        response = db.table('camps').select('*').order('start_date', desc=False).execute()
-        
-        return jsonify({
-            "status": "success",
-            "count": len(response.data),
-            "data": response.data
-        }), 200
-
+        return jsonify({"status": "success", "data": response.data}), 200
     except Exception as e:
-        logging.error(f"Erreur lors de la récupération des camps : {e}")
-        return jsonify({
-            "status": "error",
-            "message": "Impossible de charger le calendrier."
-        }), 500
-   
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/camps', methods=['POST'])
 def create_camp():
-    try:
-        # 1. On récupère le JSON envoyé par Vue.js
-        data = request.json
+    user_data = get_user_session()
+    if not user_data:
+        return jsonify({"status": "error", "message": "Non autorisé"}), 401
         
-        # 2. On formate pour que ça corresponde aux colonnes de ta table Supabase
-        # (J'utilise start_date car c'est ce qu'on lit dans le frontend)
+    unit_name = user_data["unit_name"]
+    try:
+        data = request.json
         nouveau_camp = {
             "name": data.get("name"),
             "location": data.get("location"),
             "start_date": data.get("startDate"),
-            "end_date": data.get("endDate") # Décommente si tu as créé cette colonne dans Supabase
-            # "type": data.get("type")         # Idem, si tu veux stocker si c'est un WE ou une journée
+            "end_date": data.get("endDate"),
+            "unit_name": unit_name # MAGIE : On tague le camp avec l'unité du créateur
         }
         
-        # 3. On insère dans la base
         response = get_db().table('camps').insert(nouveau_camp).execute()
-        
-        # 4. On renvoie un signal de succès au frontend
         return jsonify({"status": "success", "data": response.data}), 201
-
     except Exception as e:
-        print("Erreur lors de l'insertion :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
     
 @app.route('/api/planning_slots', methods=['POST'])
@@ -504,7 +502,178 @@ def create_recipe():
     except Exception as e:
         print("Erreur lors de la création de la recette :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-    
+# --- ROUTE : GÉNÉRER LE BORDEREAU DE COURSES D'UN REPAS ---
+@app.route('/api/meals/<meal_id>/shopping-list', methods=['GET'])
+def get_shopping_list(meal_id):
+    """Calcule la liste de courses totale pour un repas donné"""
+    try:
+        db = get_db()
+        
+        # On récupère le nombre de convives depuis l'URL (par défaut 17 comme sur ta maquette)
+        adults = int(request.args.get('adults', 17))
+        children = int(request.args.get('children', 0))
+
+        # 1. On cherche toutes les recettes associées à ce repas
+        mr_res = db.table('meal_recipes').select('recipe_id').eq('meal_id', meal_id).execute()
+        
+        if not mr_res.data:
+            return jsonify({"status": "success", "data": []}), 200
+
+        # On extrait juste la liste des IDs des recettes (ex: [1, 4, 8])
+        recipe_ids = [item['recipe_id'] for item in mr_res.data]
+
+        # 2. On récupère tous les ingrédients de ces recettes (avec les infos de l'ingrédient)
+        ing_res = db.table('recipe_ingredients').select(
+            'qty_adult, qty_child, ingredients(name, unit_type, category)'
+        ).in_('recipe_id', recipe_ids).execute()
+
+        # 3. On fait les mathématiques, on fusionne les doublons et on arrondit !
+        shopping_dict = {}
+
+        for item in ing_res.data:
+            ing_info = item['ingredients']
+            if not ing_info:
+                continue
+                
+            ing_name = ing_info['name']
+            unit = ing_info['unit_type']
+            category = ing_info['category']
+
+            # Calcul de la quantité brute
+            qty_raw = (item.get('qty_adult', 0) * adults) + (item.get('qty_child', 0) * children)
+            
+            # --- LA MAGIE DE L'ARRONDI AU SUPÉRIEUR ---
+            qty = math.ceil(qty_raw)
+
+            if ing_name in shopping_dict:
+                # Si l'ingrédient est déjà présent (doublon), on cumule et on ré-arrondit au cas où
+                shopping_dict[ing_name]['qty'] = math.ceil(shopping_dict[ing_name]['qty_raw_accumulated'] + qty_raw)
+                shopping_dict[ing_name]['qty_raw_accumulated'] += qty_raw
+            else:
+                shopping_dict[ing_name] = {
+                    'name': ing_name,
+                    'qty': qty,
+                    'qty_raw_accumulated': qty_raw, # On garde une trace brute pour les cumuls précis
+                    'unit': unit,
+                    'category': category
+                }
+
+        # On nettoie notre dictionnaire temporaire pour Vue.js
+        result = []
+        for key, item in shopping_dict.items():
+            result.append({
+                'name': item['name'],
+                'qty': item['qty'],
+                'unit': item['unit'],
+                'category': item['category']
+            })
+
+        # Optionnel : on trie par ordre alphabétique
+        result.sort(key=lambda x: x['name'])
+
+        return jsonify({"status": "success", "data": result}), 200
+
+    except Exception as e:
+        print("Erreur lors du calcul des courses :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+# ==========================================
+# GESTION DES FICHIERS (UPLOADS)
+# ==========================================
+# Dossier où seront sauvegardés les fichiers sur le serveur
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/api/adherents/<adherent_id>/upload', methods=['POST'])
+def upload_adherent_file(adherent_id):
+    """Reçoit un fichier, le sauvegarde sur le serveur et met à jour Supabase"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"status": "error", "message": "Aucun fichier envoyé"}), 400
+            
+        file = request.files['file']
+        doc_type = request.form.get('type') # 'photo' ou 'fiche'
+        
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "Fichier vide"}), 400
+
+        # 1. On nettoie le nom du fichier et on le sauvegarde sur le serveur
+        extension = file.filename.split('.')[-1]
+        filename = secure_filename(f"{adherent_id}_{doc_type}.{extension}")
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        # 2. On génère l'URL pour y accéder plus tard
+        file_url = f"http://localhost:5000/uploads/{filename}"
+        
+        # 3. On met à jour Supabase
+        db = get_db()
+        # On regarde si cet adhérent a déjà une ligne dans adherent_extras
+        res = db.table('adherent_extras').select('*').eq('adherent_id', adherent_id).execute()
+        
+        if res.data:
+            # Update
+            db.table('adherent_extras').update({f"{doc_type}_url": file_url}).eq('adherent_id', adherent_id).execute()
+        else:
+            # Insert
+            db.table('adherent_extras').insert({
+                'adherent_id': adherent_id, 
+                f"{doc_type}_url": file_url
+            }).execute()
+
+        return jsonify({"status": "success", "url": file_url}), 200
+
+    except Exception as e:
+        print("Erreur upload :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/uploads/<path:filename>')
+def serve_file(filename):
+    """Route magique pour permettre au frontend d'afficher/télécharger l'image ou le PDF"""
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+@app.route('/api/adherents/extras', methods=['GET'])
+def get_all_extras():
+    """Récupère toutes les photos et fiches pour les fusionner avec Intranext dans le Front"""
+    try:
+        res = get_db().table('adherent_extras').select('*').execute()
+        # On transforme la liste en dictionnaire pour que Vue.js le lise plus vite
+        extras_dict = {item['adherent_id']: item for item in res.data}
+        return jsonify({"status": "success", "data": extras_dict}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+@app.route('/api/adherents/<adherent_id>/progression', methods=['PUT'])
+def update_progression(adherent_id):
+    """Met à jour ou crée la progression personnelle d'un adhérent"""
+    try:
+        data = request.json
+        symbole = data.get('progression_symbole', '')
+        action = data.get('progression_action', '')
+
+        db = get_db()
+        
+        # On vérifie si l'adhérent a déjà une ligne dans adherent_extras
+        res = db.table('adherent_extras').select('*').eq('adherent_id', adherent_id).execute()
+
+        if res.data:
+            # S'il existe, on met à jour
+            db.table('adherent_extras').update({
+                'progression_symbole': symbole,
+                'progression_action': action
+            }).eq('adherent_id', adherent_id).execute()
+        else:
+            # S'il n'existe pas encore (pas de photo ni de fiche), on crée la ligne
+            db.table('adherent_extras').insert({
+                'adherent_id': adherent_id,
+                'progression_symbole': symbole,
+                'progression_action': action
+            }).execute()
+
+        return jsonify({"status": "success", "message": "Progression sauvegardée"}), 200
+
+    except Exception as e:
+        print("Erreur de sauvegarde de progression :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
     # On lance le serveur Flask sur le port 5000
     logging.info("Démarrage du serveur Flask...")
