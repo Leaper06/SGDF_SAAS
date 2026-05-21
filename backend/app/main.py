@@ -35,47 +35,75 @@ def health_check():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Route pour s'authentifier et récupérer un token de session."""
-    data = request.get_json()
-    
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({"error": "Identifiants manquants (username, password attendus)"}), 400
+    data = request.json
+    username = data.get('username') # L'email tapé par le chef
+    password = data.get('password')
 
-    username = data['username']
-    password = data['password']
-
-    logging.info(f"Tentative de connexion pour l'utilisateur : {username}")
-    
-    # 1. On lance Playwright pour récupérer les cookies
+    # 1. Scraping basique pour avoir les cookies
     cookies = get_sgdf_cookies(username, password)
-    
     if not cookies:
-        return jsonify({"error": "Échec de l'authentification. Vérifiez les identifiants."}), 401
+        return jsonify({"error": "Échec de l'authentification."}), 401
 
-    # 2. On crée la session HTTP rapide
     session_http = create_authenticated_session(cookies)
-    
-    # 3. On récupère les infos du chef ET l'unité
-    chef_info = get_logged_in_chef_info(session_http)
     adherents_info = scrape_liste_adherents(session_http)
     unit_name = adherents_info.get("unit_name", "Unité Inconnue")
     
-    session_token = str(uuid.uuid4())
+    db = get_db()
     
-    # 4. On stocke tout dans la mémoire !
+    # 2. On cherche si on connaît déjà ce chef dans Supabase
+    mapping_res = db.table('chef_mappings').select('*').eq('email', username).execute()
+    
+    # 3. On prépare la mémoire
+    session_token = str(uuid.uuid4())
+    chef_adherent_id = None
+    needs_identification = True # Par défaut, il doit s'identifier
+
+    if mapping_res.data:
+        # On le connaît !
+        chef_adherent_id = mapping_res.data[0]['adherent_id']
+        needs_identification = False
+
     ACTIVE_SESSIONS[session_token] = {
         "http": session_http,
         "unit_name": unit_name,
-        "chef_adherent_id": chef_info.get("adherent_id"), # EX: 162821708
-        "chef_email": chef_info.get("email") # EX: loic...gmail.com
+        "email": username,
+        "adherent_id": chef_adherent_id
     }
-    
-    logging.info(f"Connexion réussie. Token généré : {session_token}")
     
     return jsonify({
         "message": "Connexion réussie",
-        "token": session_token
+        "token": session_token,
+        "needs_identification": needs_identification, # On prévient Vue.js !
+        "email": username
     }), 200
+
+
+@app.route('/api/chef/identify', methods=['POST'])
+def identify_chef():
+    """Route appelée quand le chef clique sur son nom au 1er login"""
+    user_data = get_user_session()
+    if not user_data:
+        return jsonify({"error": "Non autorisé"}), 401
+        
+    data = request.json
+    adherent_id = data.get('adherent_id')
+    email = user_data['email']
+    unit_name = user_data['unit_name']
+
+    try:
+        # On sauvegarde dans Supabase
+        get_db().table('chef_mappings').insert({
+            'email': email,
+            'adherent_id': adherent_id,
+            'unit_name': unit_name
+        }).execute()
+        
+        # On met à jour la session en mémoire
+        user_data['adherent_id'] = adherent_id
+        
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/adherents', methods=['GET'])
 def get_adherents():
@@ -130,14 +158,65 @@ def get_all_camps():
         return jsonify({"status": "error", "message": "Non autorisé"}), 401
         
     unit_name = user_data["unit_name"]
+    adherent_id = user_data.get("adherent_id") # On récupère le N° du chef connecté
     db = get_db()
+    
     try:
-        # MAGIE : On ne récupère QUE les camps de cette unité !
-        response = db.table('camps').select('*').eq('unit_name', unit_name).order('start_date', desc=False).execute()
-        
-        return jsonify({"status": "success", "data": response.data}), 200
+        # 1. On récupère les camps de MA maîtrise
+        response_unit = db.table('camps').select('*').eq('unit_name', unit_name).execute()
+        camps_list = response_unit.data
+
+        # 2. On regarde si je suis invité à d'autres camps
+        if adherent_id:
+            response_guests = db.table('camp_guests').select('camp_id').eq('adherent_id', adherent_id).execute()
+            guest_camp_ids = [item['camp_id'] for item in response_guests.data]
+
+            if guest_camp_ids:
+                # Si oui, on récupère ces camps-là
+                response_invited = db.table('camps').select('*').in_('id', guest_camp_ids).execute()
+                
+                # On les ajoute à la liste sans faire de doublons
+                existing_ids = {c['id'] for c in camps_list}
+                for c in response_invited.data:
+                    if c['id'] not in existing_ids:
+                        camps_list.append(c)
+
+        # On trie le tout par date de début
+        camps_list.sort(key=lambda x: x['start_date'])
+
+        return jsonify({"status": "success", "data": camps_list}), 200
     except Exception as e:
+        print("Erreur récupération camps :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+@app.route('/api/camps/<camp_id>/guests', methods=['POST'])
+def invite_guest(camp_id):
+    user_data = get_user_session()
+    if not user_data:
+        return jsonify({"status": "error", "message": "Non autorisé"}), 401
+
+    data = request.json
+    adherent_id_invite = data.get('adherent_id')
+
+    if not adherent_id_invite:
+        return jsonify({"status": "error", "message": "Numéro d'adhérent requis"}), 400
+
+    try:
+        db = get_db()
+        # On vérifie qu'il n'est pas déjà invité pour éviter les doublons
+        existing = db.table('camp_guests').select('*').eq('camp_id', camp_id).eq('adherent_id', adherent_id_invite).execute()
+        
+        if not existing.data:
+            db.table('camp_guests').insert({
+                'camp_id': camp_id,
+                'adherent_id': adherent_id_invite
+            }).execute()
+
+        return jsonify({"status": "success", "message": "Chef invité avec succès"}), 200
+    except Exception as e:
+        print("Erreur invitation :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 
 @app.route('/api/camps', methods=['POST'])
 def create_camp():
@@ -457,9 +536,8 @@ def create_recipe():
             "dish_type": data.get('type'),  # Le front envoie 'type', la DB attend 'dish_type'
             "instructions": "", 
             "is_vegetarian": data.get('is_vegetarian', False),
-            "is_eco": data.get('is_eco', False),
-            # On met is_pork_free par défaut pour correspondre à ta structure de base
-            "is_pork_free": True 
+            "is_fridge_free": data.get('is_fridge_free', False), 
+            "is_wood_fire": data.get('is_wood_fire', False)
         }
         
         # On insère la recette et on récupère son ID généré

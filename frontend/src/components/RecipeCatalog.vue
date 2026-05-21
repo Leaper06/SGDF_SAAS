@@ -32,7 +32,7 @@
                 <button @click="selectedFilter = 'Tous'" :class="['whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold shadow-sm', selectedFilter === 'Tous' ? 'bg-[#5b2b82] text-white' : 'bg-gray-100 text-gray-600']">Tous</button>
                 <button @click="selectedFilter = 'Végétarien'" :class="['whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border', selectedFilter === 'Végétarien' ? 'bg-green-50 text-[#16a34a] border-green-200' : 'bg-white text-gray-600 border-gray-200']">✓ Végétarien</button>
                 <button @click="selectedFilter = 'Sans frigo'" :class="['whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border', selectedFilter === 'Sans frigo' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-gray-600 border-gray-200']">+ Sans frigo</button>
-                <button @click="selectedFilter = 'Économique'" :class="['whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border', selectedFilter === 'Économique' ? 'bg-orange-50 text-[#e45a27] border-orange-200' : 'bg-white text-gray-600 border-gray-200']">+ Économique</button>
+                <button @click="selectedFilter = 'Feu de bois'" :class="['whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border', selectedFilter === 'Feu de bois' ? 'bg-orange-50 text-[#e45a27] border-orange-200' : 'bg-white text-gray-600 border-gray-200']">+ Feu de bois</button>
             </div>
         </div>
 

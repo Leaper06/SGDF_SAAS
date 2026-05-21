@@ -77,9 +77,6 @@
                     <button @click="newRecipe.is_wood_fire = !newRecipe.is_wood_fire" :class="['px-3 py-1.5 rounded-full text-xs font-medium transition-colors border', newRecipe.is_wood_fire ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-gray-500 border-gray-200']">
                         {{ newRecipe.is_wood_fire ? '✓' : '+' }} Feu de bois
                     </button>
-                    <button @click="newRecipe.is_eco = !newRecipe.is_eco" :class="['px-3 py-1.5 rounded-full text-xs font-medium transition-colors border', newRecipe.is_eco ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-gray-500 border-gray-200']">
-                        {{ newRecipe.is_eco ? '✓' : '+' }} Économique
-                    </button>
                     <button @click="newRecipe.is_fridge_free = !newRecipe.is_fridge_free" :class="['px-3 py-1.5 rounded-full text-xs font-medium transition-colors border', newRecipe.is_fridge_free ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-white text-gray-500 border-gray-200']">
                         {{ newRecipe.is_fridge_free ? '✓' : '+' }} Sans frigo
                     </button>

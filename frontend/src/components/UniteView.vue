@@ -11,7 +11,24 @@
             </div>
             <p class="text-center text-blue-100 text-sm font-medium mt-1">Registre de l'Unité</p>
         </div>
-
+        <div v-if="needsIdentification" class="bg-orange-50 border-b border-orange-200 p-5 z-20">
+            <h2 class="text-[#e85d22] font-black text-lg mb-2">Bienvenue A toi ! </h2>
+            <p class="text-sm text-orange-800 font-medium mb-4">
+                C'est ta première connexion. Pour que l'application fonctionne parfaitement, clique sur ton profil dans la liste des chefs ci-dessous :
+            </p>
+            
+            <div class="grid grid-cols-1 gap-2">
+                <button 
+                    v-for="chef in chefs" 
+                    :key="chef.id"
+                    @click="confirmerIdentite(chef)"
+                    class="bg-white border border-orange-200 p-3 rounded-xl shadow-sm flex items-center justify-between hover:bg-orange-100 transition-colors"
+                >
+                    <span class="font-bold text-gray-800">{{ chef.prenom }} {{ chef.nom }}</span>
+                    <span class="text-xs font-bold text-orange-500 bg-orange-100 px-2 py-1 rounded">C'est moi !</span>
+                </button>
+            </div>
+        </div>
         <div v-if="isLoading" class="flex-1 flex flex-col items-center justify-center space-y-4">
             <svg class="animate-spin h-8 w-8 text-[#004267]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             <p class="text-sm font-bold text-gray-500 animate-pulse">Récupération depuis Intranext...</p>
@@ -166,7 +183,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { userToken, logout } from '../store.js'
+import { userToken, logout, userEmail, needsIdentification } from '../store.js'
 
 const isLoading = ref(true)
 const adherentsList = ref([])
@@ -351,6 +368,26 @@ const sauvegarderProgression = async () => {
     } finally {
         // Petit délai pour laisser le temps de lire "Enregistrement..."
         setTimeout(() => { isSavingProgression.value = false }, 500)
+    }
+}
+const confirmerIdentite = async (chefChoisi) => {
+    try {
+        const response = await fetch('http://localhost:5000/api/chef/identify', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken.value}`
+            },
+            body: JSON.stringify({ adherent_id: chefChoisi.id })
+        })
+        
+        const json = await response.json()
+        if (json.status === 'success') {
+            needsIdentification.value = false // Fait disparaître la bannière !
+            alert("Super, ton profil est lié !")
+        }
+    } catch (error) {
+        console.error("Erreur de liaison :", error)
     }
 }
 onMounted(() => { fetchAdherents() })

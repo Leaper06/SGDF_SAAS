@@ -54,6 +54,10 @@ export const shoppingList = ref([])
 export const showShoppingModal = ref(false)
 export const rabEnabled = ref(false)
 export const currentShoppingMealId = ref(null)
+
+//var info chef 
+export const userEmail = ref(localStorage.getItem('sgdf_email') || null)
+export const needsIdentification = ref(localStorage.getItem('sgdf_needs_id') === 'true')
 // ==========================================
 // CALCULS (COMPUTED)
 // ==========================================
@@ -61,11 +65,11 @@ export const filteredRecipes = computed(() => {
   let result = recipesList.value
   if (searchQuery.value) result = result.filter(r => r.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
   if (selectedFilter.value === 'Végétarien') result = result.filter(r => r.is_vegetarian)
-  if (selectedFilter.value === 'Sans frigo') result = result.filter(r => r.is_pork_free)
-  if (selectedFilter.value === 'Économique') result = result.filter(r => r.is_eco)
+  if (selectedFilter.value === 'Sans frigo') result = result.filter(r => r.is_fridge_free)
+  if (selectedFilter.value === 'Feu de bois') result = result.filter(r => r.is_wood_fire)
+  
   return result
 })
-
 export const moisActuelTexte = computed(() => currentDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }))
 export const campsDuMois = computed(() => campsList.value.filter(camp => {
   const dateCamp = new Date(camp.start_date)
@@ -334,7 +338,7 @@ export const chargerCatalogueRecettes = async () => {
 }
 
 export const ouvrirEditeurRecette = () => {
-  newRecipe.value = { name: '', type: 'Plat chaud', ingredients: [ { id: Date.now(), name: '', qty_child: null, qty_adult: null } ], is_vegetarian: false, is_fridge_free: false, is_eco: false, is_wood_fire: false }
+  newRecipe.value = { name: '', type: 'Plat chaud', ingredients: [ { id: Date.now(), name: '', qty_child: null, qty_adult: null } ], is_vegetarian: false, is_fridge_free: false, is_wood_fire: false}
   currentView.value = 'recipe_builder'
 }
 export const ajouterIngredientRecette = () => newRecipe.value.ingredients.push({ id: Date.now(), name: '', qty_child: null, qty_adult: null })
@@ -549,10 +553,17 @@ export const loginToSGDF = async (username, password) => {
     const json = await response.json()
     
     if (response.ok && json.token) {
+      
       userToken.value = json.token
+      userEmail.value = json.email // On stocke l'email renvoyé par Flask
+      needsIdentification.value = json.needs_identification // On stocke si c'est son 1er login ou pas
+      
       localStorage.setItem('sgdf_token', json.token)
+      localStorage.setItem('sgdf_email', json.email) 
+      localStorage.setItem('sgdf_needs_id', json.needs_identification)
+      // -------------------------------
+      
       await fetchCamps()
-      // Redirection vers la page Unité (que l'on construira après)
       currentView.value = 'unite'
     } else {
       loginError.value = json.error || "Identifiants incorrects ou intranet indisponible."
@@ -565,8 +576,58 @@ export const loginToSGDF = async (username, password) => {
   }
 }
 
-export const logout = () => {
+
+  export const logout = () => {
   userToken.value = null
+  userEmail.value = null
+  needsIdentification.value = false
+  
   localStorage.removeItem('sgdf_token')
+  localStorage.removeItem('sgdf_email')
+  localStorage.removeItem('sgdf_needs_id') 
+  
   currentView.value = 'calendar'
+}
+
+// --- INVITATION CHEF EXTERNE ---
+export const showInviteModal = ref(false)
+export const inviteAdherentId = ref('')
+
+export const ouvrirInviteModal = () => {
+  inviteAdherentId.value = ''
+  showCampMenu.value = false // Ferme le menu des 3 petits points
+  showInviteModal.value = true
+}
+
+export const fermerInviteModal = () => {
+  showInviteModal.value = false
+}
+
+export const soumettreInvitation = async () => {
+  if (!inviteAdherentId.value || !selectedCamp.value) {
+    alert("Veuillez saisir un numéro d'adhérent.")
+    return
+  }
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/guests`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken.value}`
+      },
+      body: JSON.stringify({ adherent_id: inviteAdherentId.value.trim() })
+    })
+
+    const json = await response.json()
+    if (json.status === 'success') {
+      alert("Le chef a bien été ajouté au week-end !")
+      fermerInviteModal()
+    } else {
+      alert("Erreur : " + json.message)
+    }
+  } catch (error) {
+    console.error("Erreur d'invitation :", error)
+    alert("Impossible de joindre le serveur.")
+  }
 }
