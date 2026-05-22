@@ -27,17 +27,21 @@
       </div>
 
       <div class="flex-1 overflow-y-auto px-4 pt-6 pb-28 space-y-6">
-        <div>
-          <h2 class="text-3xl font-black text-[#001D2D]">{{ selectedSlot.title }}</h2>
-          <div class="flex items-center gap-2 mt-3 text-sm text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span>Resp :</span>
-            <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium text-xs">Alice</span>
-            <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium text-xs">Jean</span>
-            <button class="text-gray-400 hover:text-gray-600">+</button>
-          </div>
+        <div class="flex flex-wrap items-center gap-2 mt-3 text-sm text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span>Resp :</span>
+          
+          <span v-if="selectedResponsiblesDetails.length === 0" class="text-xs italic text-gray-400">Aucun</span>
+          
+          <span v-for="chef in selectedResponsiblesDetails" :key="chef.id" class="bg-gray-100 text-[#432C7A] px-2.5 py-0.5 rounded-full font-bold text-xs border border-purple-100">
+            {{ chef.prenom }}
+          </span>
+          
+          <button @click="ouvrirGestionResponsables" class="w-6 h-6 rounded-full bg-gray-100 text-gray-400 hover:text-[#432C7A] hover:bg-purple-50 border border-transparent hover:border-purple-200 flex items-center justify-center transition-all shadow-sm">
+            <span class="text-sm font-bold leading-none mb-0.5">+</span>
+          </button>
         </div>
 
         <div class="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 relative group">
@@ -149,7 +153,50 @@
         </div>
       </div>
     </div>
+    <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-full">
+  <div v-if="showResponsiblesModal" class="fixed inset-0 z-50 flex flex-col justify-end">
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showResponsiblesModal = false"></div>
+    
+    <div class="relative bg-white w-full h-[60vh] rounded-t-3xl shadow-2xl flex flex-col z-10 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div>
+          <h3 class="font-extrabold text-lg text-[#001D2D]">Responsables</h3>
+          <p class="text-xs text-gray-500 font-medium">Chefs présents au week-end</p>
+        </div>
+        <button @click="showResponsiblesModal = false" class="p-2 bg-gray-200 hover:bg-gray-300 rounded-full text-gray-600 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-6 space-y-2 bg-gray-50/30">
+        <div v-if="presentChefs.length === 0" class="text-center text-gray-500 text-sm mt-4">
+          Aucun chef n'est marqué comme présent pour ce camp.
+        </div>
+        <div v-for="chef in presentChefs" :key="chef.id" @click="toggleResponsible(chef.id)" 
+             :class="['border rounded-2xl p-3 flex justify-between items-center cursor-pointer transition-all', activityResponsibles.includes(String(chef.id)) ? 'border-[#432C7A] bg-purple-50' : 'border-gray-200 bg-white hover:border-purple-200']">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+              <img v-if="chef.photo" :src="chef.photo" class="w-full h-full object-cover">
+              <span v-else class="text-xs font-bold text-gray-500">{{ chef.prenom.charAt(0) }}{{ chef.nom.charAt(0) }}</span>
+            </div>
+            <span class="font-bold text-gray-900 text-sm">{{ chef.prenom }} {{ chef.nom }}</span>
+          </div>
+          <div :class="['w-5 h-5 rounded border-2 flex items-center justify-center', activityResponsibles.includes(String(chef.id)) ? 'bg-[#432C7A] border-[#432C7A] text-white' : 'border-gray-300']">
+            <svg v-if="activityResponsibles.includes(String(chef.id))" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-6 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button @click="sauvegarderResponsables" class="w-full bg-[#432C7A] hover:bg-purple-900 text-white font-bold py-3.5 rounded-xl transition-transform active:scale-95 shadow-md">
+          Valider les responsables
+        </button>
+      </div>
+    </div>
+  </div>
+</transition>
 </template>
+
 
 <script setup>
 import { 
@@ -158,4 +205,17 @@ import {
   supprimerEtape, isAddingStep, newStep, ajouterEtape, ouvrirAjoutEtape, 
   toggleMateriel, newMaterialName, ajouterMateriel 
 } from '../store.js'
+import { 
+  
+  showResponsiblesModal, selectedResponsiblesDetails, presentChefs, 
+  activityResponsibles, ouvrirGestionResponsables, toggleResponsible, 
+  sauvegarderResponsables
+} from '../store.js'
+
+import { onMounted } from 'vue'
+import { chargerResponsablesActivite } from '../store.js'
+
+onMounted(() => {
+    chargerResponsablesActivite()
+})
 </script>

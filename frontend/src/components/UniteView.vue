@@ -29,21 +29,20 @@
                 </button>
             </div>
         </div>
-        <div v-if="isLoading" class="flex-1 flex flex-col items-center justify-center space-y-4">
+        <div v-if="isLoadingAdherents" class="flex-1 flex flex-col items-center justify-center space-y-4">
             <svg class="animate-spin h-8 w-8 text-[#004267]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p class="text-sm font-bold text-gray-500 animate-pulse">Récupération depuis Intranext...</p>
+            <p class="text-sm font-bold text-gray-500 animate-pulse">Récupération depuis l'intranet...</p>
         </div>
 
         <div v-else class="flex-1 overflow-y-auto p-4 pb-28 space-y-6">
             
             <div>
-                <h3 class="flex items-center gap-2 text-xs font-bold text-[#e85d22] uppercase tracking-wider mb-3 ml-1">
+                <h3 :class="[branchStyles.text, 'flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-3 ml-1']">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                     {{ unitName }} ({{ jeunes.length }})
                 </h3>
                 <div class="grid grid-cols-1 gap-3">
-                    <div v-for="membre in jeunes" :key="membre.id" @click="ouvrirFiche(membre)" class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:border-orange-200 transition-colors">
-                        <div class="w-12 h-12 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center shrink-0 border-2 border-white shadow-sm">
+                        <div v-for="membre in jeunes" :key="membre.id" @click="ouvrirFiche(membre)" :class="['bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer transition-colors', branchStyles.borderHover]">                        <div class="w-12 h-12 rounded-full overflow-hidden bg-orange-100 flex items-center justify-center shrink-0 border-2 border-white shadow-sm">
                             <img v-if="membre.photo" :src="membre.photo" class="w-full h-full object-cover">
                             <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-[50%] w-[50%] opacity-50" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
@@ -87,7 +86,7 @@
                 <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" @click="fermerFiche"></div>
                 
                 <div class="relative bg-white w-full rounded-t-3xl shadow-2xl flex flex-col z-10 overflow-hidden pb-8">
-                    <div :class="['h-24 w-full relative', selectedMember.isJeune ? 'bg-[#e85d22]' : 'bg-scoutViolet']">
+                    <div :class="['h-24 w-full relative', selectedMember.isJeune ? branchStyles.bg : 'bg-scoutViolet']">
                         <div class="absolute -bottom-10 left-6 w-24 h-24 rounded-full overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center cursor-pointer" @click="$refs.photoInput.click()">
                             <img v-if="selectedMember.photo" :src="selectedMember.photo" class="w-full h-full object-cover">
                             <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-[50%] w-[50%] opacity-50" viewBox="0 0 20 20" fill="currentColor">
@@ -143,34 +142,34 @@
                                 
                             </div>
                             <div v-if="selectedMember.isJeune" class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Progression Personnelle</h3>
-                                <button @click="sauvegarderProgression" class="text-xs font-bold text-[#e85d22] bg-orange-50 px-3 py-1.5 rounded-lg hover:bg-orange-100 transition-colors shadow-sm">
-                                    {{ isSavingProgression ? 'Enregistrement...' : 'Enregistrer' }}
-                                </button>
-                            </div>
-                            
-                            <div class="bg-orange-50/50 border border-orange-100 rounded-xl p-4 space-y-3">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-[#e85d22] uppercase tracking-wider mb-1">Étape / Insigne (Atout, Cap...)</label>
-                                    <input 
-                                        v-model="selectedMember.progressionSymbole" 
-                                        type="text" 
-                                        placeholder="Ex: Atout de la Rencontre" 
-                                        class="w-full bg-white border border-orange-100 text-gray-900 font-medium rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#e85d22] transition-colors"
-                                    >
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Progression Personnelle</h3>
+                                    <button @click="sauvegarderProgression" :class="['text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm', branchStyles.btn]">
+                                        {{ isSavingProgression ? 'Enregistrement...' : 'Enregistrer' }}
+                                    </button>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-[#e85d22] uppercase tracking-wider mb-1">Défi / Action à réaliser</label>
-                                    <textarea 
-                                        v-model="selectedMember.progressionAction" 
-                                        rows="2" 
-                                        placeholder="Ex: Organiser un grand jeu sur l'inclusion pour la peuplade..." 
-                                        class="w-full bg-white border border-orange-100 text-gray-900 font-medium rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#e85d22] transition-colors"
-                                    ></textarea>
+                                
+                                <div :class="['border rounded-xl p-4 space-y-3', branchStyles.lightBg, branchStyles.lightBorder]">
+                                    <div>
+                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1', branchStyles.text]">Étape / Insigne (Atout, Cap...)</label>
+                                        <input 
+                                            v-model="selectedMember.progressionSymbole" 
+                                            type="text" 
+                                            placeholder="Ex: Atout de la Rencontre" 
+                                            :class="['w-full bg-white border text-gray-900 font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors', branchStyles.lightBorder, branchStyles.focusBorder]"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1', branchStyles.text]">Défi / Action à réaliser</label>
+                                        <textarea 
+                                            v-model="selectedMember.progressionAction" 
+                                            rows="2" 
+                                            placeholder="Ex: Organiser un grand jeu..." 
+                                            :class="['w-full bg-white border text-gray-900 font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors', branchStyles.lightBorder, branchStyles.focusBorder]"
+                                        ></textarea>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         </div>
                     </div>
                     <input type="file" accept="image/*" ref="photoInput" @change="handlePhotoUpload" class="hidden">
@@ -183,11 +182,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { userToken, logout, userEmail, needsIdentification } from '../store.js'
-
-const isLoading = ref(true)
-const adherentsList = ref([])
-const unitName = ref("Chargement de l'unité...")
+// NOUVEAU : On importe tout depuis le store !
+import { 
+    userToken, logout, userEmail, needsIdentification, chefAdherentId, 
+    chefBranch, unitName, groupName, adherentsList, jeunes, chefs, 
+    fetchAdherents, isLoadingAdherents 
+} from '../store.js'
 
 const selectedMember = ref(null)
 const photoInput = ref(null)
@@ -196,76 +196,36 @@ const getInitials = (nom, prenom) => {
     return (prenom?.charAt(0) || '') + (nom?.charAt(0) || '')
 }
 
-
-const jeunes = computed(() => adherentsList.value.filter(m => m.isJeune))
-const chefs = computed(() => adherentsList.value.filter(m => m.isChef))
-
 const ouvrirFiche = (membre) => { selectedMember.value = membre }
 const fermerFiche = () => { selectedMember.value = null }
 
+// On lance le chargement à l'ouverture de la page
+onMounted(() => {
+    fetchAdherents()
+})
 
-const fetchAdherents = async () => {
-    isLoading.value = true
-    try {
-        // 1. On lance DEUX requêtes en parallèle : Intranext + Notre base de données Supabase
-        const [intranextResponse, extrasResponse] = await Promise.all([
-            fetch('http://localhost:5000/api/adherents', {
-                headers: { 'Authorization': `Bearer ${userToken.value}` }
-            }),
-            fetch('http://localhost:5000/api/adherents/extras')
-        ])
-        
-        if (intranextResponse.status === 401) {
-            logout()
-            return
-        }
-        
-        const json = await intranextResponse.json()
-        const extrasJson = await extrasResponse.json()
-        
-        const extraData = extrasJson.status === 'success' ? extrasJson.data : {}
-
-        if (intranextResponse.ok && json.data) {
-            unitName.value = json.unit_name || "Unité Inconnue"
-            const rows = json.data.slice(1) 
-
-            adherentsList.value = rows.map((row, index) => {
-                const cols = row.filter(c => c.trim() !== '')
-                const rowText = cols.join(" ")
-                const isJeune = /\b1\d{2}\b/.test(rowText)
-                const isChef = /\b2\d{2}\b/.test(rowText)
-                const identite = separerNomPrenom(cols[0])
-                const numAdherent = cols[1] || `id-${index}`
-            const nom = identite.nom
-            const prenom = identite.prenom
-                
-                const matchCode = rowText.match(/\b([12]\d{2})\b/)
-                const codeAffichage = matchCode ? matchCode[0] : "Code ???"
-
-                // 2. On fusionne les données d'Intranext avec les URL de nos fichiers Supabase !
-                const localInfo = extraData[numAdherent] || {}
-
-                return {
-                    id: numAdherent,
-                    nom: nom,
-                    prenom: prenom,
-                    code: codeAffichage,
-                    isJeune,
-                    isChef,
-                    photo: localInfo.photo_url || null,
-                    ficheUrl: localInfo.fiche_url || null,
-                    hasFiche: !!localInfo.fiche_url,
-                    progressionSymbole: localInfo.progression_symbole || '',
-                    progressionAction: localInfo.progression_action || ''
-                }
-            })
-        }
-    } catch (error) {
-        console.error("Erreur API :", error)
-    } finally {
-        isLoading.value = false
+// Définition des couleurs thématiques selon la branche (on garde ça ici car c'est de l'affichage pur)
+const branchStyles = computed(() => {
+  if (chefBranch.value === 'Louja') {
+    return {
+      bg: 'bg-[#e85d22]', text: 'text-[#e85d22]', borderHover: 'hover:border-orange-200',
+      lightBg: 'bg-orange-50/50', lightBorder: 'border-orange-100',
+      focusBorder: 'focus:border-[#e85d22]', btn: 'text-[#e85d22] bg-orange-50 hover:bg-orange-100'
     }
-}
+  }
+  if (chefBranch.value === 'Piok') {
+    return {
+      bg: 'bg-[#da291c]', text: 'text-[#da291c]', borderHover: 'hover:border-red-200',
+      lightBg: 'bg-red-50/50', lightBorder: 'border-red-100',
+      focusBorder: 'focus:border-[#da291c]', btn: 'text-[#da291c] bg-red-50 hover:bg-red-100'
+    }
+  }
+  return {
+    bg: 'bg-[#004267]', text: 'text-[#004267]', borderHover: 'hover:border-blue-200',
+    lightBg: 'bg-blue-50/50', lightBorder: 'border-blue-100',
+    focusBorder: 'focus:border-[#004267]', btn: 'text-[#004267] bg-blue-50 hover:bg-blue-100'
+  }
+})
 
 // Fonction universelle pour envoyer un fichier (Photo ou PDF) au serveur
 const uploadToServer = async (file, type) => {
@@ -316,27 +276,6 @@ const consulterFiche = () => {
     window.open(selectedMember.value.ficheUrl, '_blank')
 }
 
-const separerNomPrenom = (nomComplet) => {
-    if (!nomComplet) return { nom: "Inconnu", prenom: "" }
-
-    // 1. Nettoyage : enlève les espaces inutiles au début/fin et les doubles espaces au milieu
-    const textPropre = nomComplet.trim().replace(/\s+/g, ' ')
-    
-    // 2. Découpage dans un tableau
-    const mots = textPropre.split(' ')
-
-    // S'il n'y a qu'un seul mot
-    if (mots.length === 1) return { nom: mots[0], prenom: "" }
-
-    // 3. Séparation (Généralement l'intranet sort "NOM Prénom")
-    const premierMot = mots.shift() // Retire et stocke le premier élément (Ex: "DUPONT")
-    const resteDuNom = mots.join(' ') // Regroupe tout le reste (Ex: "Jean Baptiste")
-
-    return {
-        nom: premierMot,
-        prenom: resteDuNom
-    }
-}
 
 const isSavingProgression = ref(false)
 
@@ -383,8 +322,17 @@ const confirmerIdentite = async (chefChoisi) => {
         
         const json = await response.json()
         if (json.status === 'success') {
-            needsIdentification.value = false // Fait disparaître la bannière !
-            alert("Super, ton profil est lié !")
+            needsIdentification.value = false
+            chefAdherentId.value = chefChoisi.id
+            localStorage.setItem('sgdf_chef_id', chefChoisi.id)
+
+            // Détection immédiate
+            if (['214', '215'].includes(chefChoisi.code)) chefBranch.value = 'Louja'
+            else if (['222', '223'].includes(chefChoisi.code)) chefBranch.value = 'Scout-Guide'
+            else if (['224', '225'].includes(chefChoisi.code)) chefBranch.value = 'Piok'
+            
+            localStorage.setItem('sgdf_chef_branch', chefBranch.value)
+            console.log(" Branche du chef connecté :", chefBranch.value)
         }
     } catch (error) {
         console.error("Erreur de liaison :", error)

@@ -58,6 +58,119 @@ export const currentShoppingMealId = ref(null)
 //var info chef 
 export const userEmail = ref(localStorage.getItem('sgdf_email') || null)
 export const needsIdentification = ref(localStorage.getItem('sgdf_needs_id') === 'true')
+export const chefAdherentId = ref(localStorage.getItem('sgdf_chef_id') || null)
+export const chefBranch = ref(localStorage.getItem('sgdf_chef_branch') || 'Inconnue')
+export const unitName = ref(localStorage.getItem('sgdf_unit_name') || "Mon Unité")
+// On extrait automatiquement le nom du groupe (ce qu'il y a après le " - ")
+export const groupName = computed(() => {
+    if (!unitName.value) return ''
+    const parties = unitName.value.split(' - ')
+    // S'il y a un tiret, on prend la 2ème partie, sinon on prend tout par sécurité
+    return parties.length > 1 ? parties[1].trim() : unitName.value.trim()
+})
+
+// ==========================================
+// GESTION DES ADHÉRENTS (Jeunes & Maîtrise)
+// ==========================================
+export const isLoadingAdherents = ref(true)
+export const adherentsList = ref([])
+
+// Les listes filtrées prêtes à l'emploi partout !
+export const jeunes = computed(() => adherentsList.value.filter(m => m.isJeune))
+export const chefs = computed(() => adherentsList.value.filter(m => m.isChef))
+
+// Fonction utilitaire (qui reste interne au store)
+const separerNomPrenom = (nomComplet) => {
+    if (!nomComplet) return { nom: "Inconnu", prenom: "" }
+    const textPropre = nomComplet.trim().replace(/\s+/g, ' ')
+    const mots = textPropre.split(' ')
+    if (mots.length === 1) return { nom: mots[0], prenom: "" }
+    const premierMot = mots.shift()
+    const resteDuNom = mots.join(' ')
+    return { nom: premierMot, prenom: resteDuNom }
+}
+
+// L'appel API centralisé
+export const fetchAdherents = async () => {
+    // Si on a déjà les adhérents, on évite de recharger pour rien
+    if (adherentsList.value.length > 0) return 
+
+    isLoadingAdherents.value = true
+    try {
+        const [intranextResponse, extrasResponse] = await Promise.all([
+            fetch('http://localhost:5000/api/adherents', {
+                headers: { 'Authorization': `Bearer ${userToken.value}` }
+            }),
+            fetch('http://localhost:5000/api/adherents/extras')
+        ])
+        
+        if (intranextResponse.status === 401) {
+            logout()
+            return
+        }
+        
+        const json = await intranextResponse.json()
+        const extrasJson = await extrasResponse.json()
+        const extraData = extrasJson.status === 'success' ? extrasJson.data : {}
+        
+        if (intranextResponse.ok && json.data) {
+            unitName.value = json.unit_name || "Unité Inconnue"
+            localStorage.setItem('sgdf_unit_name', unitName.value)
+            
+            if (json.adherent_id) {
+                chefAdherentId.value = json.adherent_id
+                localStorage.setItem('sgdf_chef_id', json.adherent_id)
+            }
+
+            const rows = json.data.slice(1) 
+
+            adherentsList.value = rows.map((row, index) => {
+                const cols = row.filter(c => c.trim() !== '')
+                const rowText = cols.join(" ")
+                const isJeune = /\b1\d{2}\b/.test(rowText)
+                const isChef = /\b2\d{2}\b/.test(rowText)
+                const identite = separerNomPrenom(cols[0])
+                const numAdherent = cols[1] || `id-${index}`
+                
+                const matchCode = rowText.match(/\b([12]\d{2})\b/)
+                const codeAffichage = matchCode ? matchCode[0] : "Code ???"
+                const localInfo = extraData[numAdherent] || {}
+
+                return {
+                    id: numAdherent,
+                    nom: identite.nom,
+                    prenom: identite.prenom,
+                    code: codeAffichage,
+                    isJeune: isJeune,
+                    isChef: isChef,
+                    photo: localInfo.photo_url || null,
+                    ficheUrl: localInfo.fiche_url || null,
+                    hasFiche: !!localInfo.fiche_url,
+                    progressionSymbole: localInfo.progression_symbole || '',
+                    progressionAction: localInfo.progression_action || ''
+                }
+            })
+
+            // Détection de branche
+            if (chefAdherentId.value) {
+                const idRecherche = String(chefAdherentId.value).trim()
+                const monProfil = adherentsList.value.find(m => String(m.id).trim() === idRecherche)
+
+                if (monProfil) {
+                    if (['214', '215'].includes(monProfil.code)) chefBranch.value = 'Louja'
+                    else if (['222', '223'].includes(monProfil.code)) chefBranch.value = 'SG'
+                    else if (['224', '225'].includes(monProfil.code)) chefBranch.value = 'Piok'
+                    else chefBranch.value = 'Autre'
+                    localStorage.setItem('sgdf_chef_branch', chefBranch.value)
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Erreur API :", error)
+    } finally {
+        isLoadingAdherents.value = false
+    }
+}
 // ==========================================
 // CALCULS (COMPUTED)
 // ==========================================
@@ -86,14 +199,18 @@ export const joursDuCalendrier = computed(() => {
   if (decallageDebut === -1) decallageDebut = 6 
 
   const jours = []
+  
+  // 1ère boucle : Les jours grisés du mois précédent
   const dernierJourMoisPrecedent = new Date(annee, mois, 0).getDate()
   for (let i = decallageDebut - 1; i >= 0; i--) {
     jours.push({ dayNumber: dernierJourMoisPrecedent - i, isCurrentMonth: false, aUnEvenement: false })
   }
   
+  // 2ème boucle : Les jours du mois actuel
   for (let i = 1; i <= dernierJourDuMois.getDate(); i++) {
     const dateDeLaCase = new Date(annee, mois, i).setHours(0, 0, 0, 0)
     let etatCamp = 'aucun'
+    
     const evenementCeJour = campsDuMois.value.find(camp => {
       const start = new Date(camp.start_date).setHours(0, 0, 0, 0)
       const end = camp.end_date ? new Date(camp.end_date).setHours(0, 0, 0, 0) : start
@@ -109,13 +226,22 @@ export const joursDuCalendrier = computed(() => {
       else etatCamp = 'milieu'
     }
 
-    jours.push({ date: new Date(annee, mois, i), dayNumber: i, isCurrentMonth: true, etatCamp: etatCamp })
+    
+    jours.push({ 
+      date: new Date(annee, mois, i), 
+      dayNumber: i, 
+      isCurrentMonth: true, 
+      etatCamp: etatCamp,
+      camp: evenementCeJour || null
+    })
   }
 
+  // 3ème boucle : Les jours grisés du mois suivant pour finir le tableau de 42 cases
   const casesRestantes = 42 - jours.length
   for (let i = 1; i <= casesRestantes; i++) {
     jours.push({ dayNumber: i, isCurrentMonth: false, aUnEvenement: false })
   }
+  
   return jours
 })
 
@@ -387,28 +513,107 @@ export const ajouterRecetteAuMenu = async (recipe) => {
 }
 export const fermerMenuRepas = () => { selectedSlot.value = null; currentView.value = 'planning' }
 
+
 // --- BORDEREAU ---
 
 export const genererBordereau = async () => {
   if (!currentMeal.value) return
   
-  if (currentShoppingMealId.value === currentMeal.value.id) {
-    showShoppingModal.value = true
-    return
-  }
 
   try {
-    const response = await fetch(`http://localhost:5000/api/meals/${currentMeal.value.id}/shopping-list?adults=17&children=0`)
+    // 1. Calcul dynamique des effectifs
+    let nbJeunesPresents = 0
+    let nbAdultesPresents = 0
+
+    if (selectedCamp.value) {
+      const attRes = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/attendance`, {
+          headers: { 'Authorization': `Bearer ${userToken.value}` }
+      })
+      const attData = await attRes.json()
+
+      if (attData.status === 'success' && attData.present.length > 0) {
+          const presentsIds = attData.present.map(String)
+          
+          presentsIds.forEach(idPresent => {
+              if (jeunes.value.some(j => String(j.id) === idPresent)) {
+                  nbJeunesPresents++
+              } else if (chefs.value.some(c => String(c.id) === idPresent)) {
+                  nbAdultesPresents++
+              }
+          })
+      } else {
+          nbJeunesPresents = jeunes.value.length
+          nbAdultesPresents = chefs.value.length
+      }
+    } else {
+      nbJeunesPresents = jeunes.value.length
+      nbAdultesPresents = chefs.value.length
+    }
+
+    // 2. On appelle Flask avec les VRAIS chiffres dynamiques à chaque clic
+    const response = await fetch(`http://localhost:5000/api/meals/${currentMeal.value.id}/shopping-list?adults=${nbAdultesPresents}&children=${nbJeunesPresents}`, {
+        headers: { 'Authorization': `Bearer ${userToken.value}` }
+    })
     const json = await response.json()
     
+    // 3. On met à jour l'interface avec les données toutes fraîches
     if (json.status === 'success') {
       shoppingList.value = json.data.map(item => ({...item, isChecked: false}))
-      currentShoppingMealId.value = currentMeal.value.id // On mémorise l'ID
+      currentShoppingMealId.value = currentMeal.value.id 
       showShoppingModal.value = true
     }
   } catch (error) {
     console.error("Erreur de génération :", error)
   }
+}
+
+// --- BORDEREAU GLOBAL DU WEEK-END ---
+export const genererBordereauGlobal = async () => {
+    if (!selectedCamp.value) return
+
+    try {
+        let nbJeunesPresents = 0
+        let nbAdultesPresents = 0
+
+        // 1. On récupère les effectifs du camp
+        const attRes = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/attendance`, {
+            headers: { 'Authorization': `Bearer ${userToken.value}` }
+        })
+        const attData = await attRes.json()
+
+        if (attData.status === 'success' && attData.present.length > 0) {
+            const presentsIds = attData.present.map(String)
+            presentsIds.forEach(idPresent => {
+                if (jeunes.value.some(j => String(j.id) === idPresent)) {
+                    nbJeunesPresents++
+                } else if (chefs.value.some(c => String(c.id) === idPresent)) {
+                    nbAdultesPresents++
+                }
+            })
+        } else {
+            nbJeunesPresents = jeunes.value.length
+            nbAdultesPresents = chefs.value.length
+        }
+
+        console.log(`Bordereau GLOBAL : ${nbJeunesPresents} jeunes, ${nbAdultesPresents} adultes`)
+
+        // 2. On interroge la nouvelle API globale du camp
+        const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/shopping-list?adults=${nbAdultesPresents}&children=${nbJeunesPresents}`, {
+            headers: { 'Authorization': `Bearer ${userToken.value}` }
+        })
+        const json = await response.json()
+        
+        if (json.status === 'success') {
+            // On met à jour la même liste que pour les repas individuels
+            shoppingList.value = json.data.map(item => ({...item, isChecked: false}))
+            
+            // Astuce : on donne un ID spécial "global_id" pour le LocalStorage
+            currentShoppingMealId.value = `global_${selectedCamp.value.id}` 
+            showShoppingModal.value = true
+        }
+    } catch (error) {
+        console.error("Erreur de génération globale :", error)
+    }
 }
 
 export const fermerBordereau = () => {
@@ -507,6 +712,103 @@ export const ajouterEtape = () => {
   isAddingStep.value = false; editingStepIndex.value = null
 }
 
+// ==========================================
+// RESPONSABLES D'ACTIVITÉ
+// ==========================================
+export const showResponsiblesModal = ref(false)
+export const activityResponsibles = ref([]) // Les ID des chefs cochés
+export const presentChefs = ref([]) // Les chefs présents au camp
+
+// Calcul automatique pour afficher les prénoms dans l'interface
+export const selectedResponsiblesDetails = computed(() => {
+    return chefs.value.filter(c => activityResponsibles.value.includes(String(c.id)))
+})
+
+// Ouvre la modale et charge les données
+export const ouvrirGestionResponsables = async () => {
+    if (!currentActivity.value || !selectedCamp.value) return
+
+    // 1. On cherche les chefs PRÉSENTS au week-end
+    try {
+        const attRes = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/attendance`, {
+            headers: { 'Authorization': `Bearer ${userToken.value}` }
+        })
+        const attData = await attRes.json()
+        
+        if (attData.status === 'success' && attData.present.length > 0) {
+            const presentIds = attData.present.map(String)
+            presentChefs.value = chefs.value.filter(c => presentIds.includes(String(c.id)))
+        } else {
+            presentChefs.value = chefs.value // Sécurité : si l'appel n'est pas fait, on affiche tout le monde
+        }
+    } catch (e) {
+        console.error(e)
+        presentChefs.value = chefs.value
+    }
+
+    // 2. On charge les responsables déjà cochés pour CETTE activité
+    try {
+        const res = await fetch(`http://localhost:5000/api/activities/${currentActivity.value.id}/responsibles`, {
+            headers: { 'Authorization': `Bearer ${userToken.value}` }
+        })
+        const data = await res.json()
+        if (data.status === 'success') {
+            activityResponsibles.value = data.data.map(String)
+        }
+    } catch (e) {
+        console.error(e)
+    }
+
+    showResponsiblesModal.value = true
+}
+
+// Fonction pour cocher/décocher
+export const toggleResponsible = (id) => {
+    const strId = String(id)
+    const index = activityResponsibles.value.indexOf(strId)
+    if (index === -1) {
+        activityResponsibles.value.push(strId)
+    } else {
+        activityResponsibles.value.splice(index, 1)
+    }
+}
+
+// Sauvegarde dans la base
+export const sauvegarderResponsables = async () => {
+    try {
+        const res = await fetch(`http://localhost:5000/api/activities/${currentActivity.value.id}/responsibles`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken.value}`
+            },
+            body: JSON.stringify({ adherent_ids: activityResponsibles.value })
+        })
+        const data = await res.json()
+        if (data.status === 'success') {
+            showResponsiblesModal.value = false
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+// Astuce : On charge les responsables dès l'ouverture de la fiche pour les afficher directement
+export const chargerResponsablesActivite = async () => {
+    if (!currentActivity.value) return
+    try {
+        const res = await fetch(`http://localhost:5000/api/activities/${currentActivity.value.id}/responsibles`, {
+            headers: { 'Authorization': `Bearer ${userToken.value}` }
+        })
+        const data = await res.json()
+        if (data.status === 'success') {
+            activityResponsibles.value = data.data.map(String)
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
 // OUTILS FORMATAGE
 export const getTheme = (type) => {
   switch (type) {
@@ -552,16 +854,21 @@ export const loginToSGDF = async (username, password) => {
     
     const json = await response.json()
     
-    if (response.ok && json.token) {
-      
+if (response.ok && json.token) {
       userToken.value = json.token
-      userEmail.value = json.email // On stocke l'email renvoyé par Flask
-      needsIdentification.value = json.needs_identification // On stocke si c'est son 1er login ou pas
+      userEmail.value = json.email 
+      needsIdentification.value = json.needs_identification 
+      chefAdherentId.value = json.adherent_id // <-- STOCKAGE DE L'ID
       
       localStorage.setItem('sgdf_token', json.token)
       localStorage.setItem('sgdf_email', json.email) 
-      localStorage.setItem('sgdf_needs_id', json.needs_identification)
-      // -------------------------------
+      localStorage.setItem('sgdf_needs_id', json.needs_identification) 
+      if (json.adherent_id) localStorage.setItem('sgdf_chef_id', json.adherent_id) 
+        if (json.unit_name) {
+        unitName.value = json.unit_name
+        localStorage.setItem('sgdf_unit_name', json.unit_name)
+      }
+      
       
       await fetchCamps()
       currentView.value = 'unite'
@@ -585,6 +892,8 @@ export const loginToSGDF = async (username, password) => {
   localStorage.removeItem('sgdf_token')
   localStorage.removeItem('sgdf_email')
   localStorage.removeItem('sgdf_needs_id') 
+  localStorage.removeItem('sgdf_chef_id')      
+  localStorage.removeItem('sgdf_chef_branch')
   
   currentView.value = 'calendar'
 }

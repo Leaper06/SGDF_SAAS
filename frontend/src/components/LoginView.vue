@@ -53,7 +53,8 @@
                 </span>
             </button>
             <p v-if="isLoggingIn" class="text-center text-xs text-gray-400 mt-3 italic animate-pulse">
-                Vérification auprès de l'intranet... (cela peut prendre quelques secondes)
+                Vérification auprès de l'intranet... (cela peut prendre quelques secondes) </p>
+                <p v-if="isLoggingIn" class="text-center text-xs text-gray-400 mt-3 italic animate-pulse">Si vous trouvez ça long, aidez-moi à trouver le contact du DSI des SGDF. merciii 😁
             </p>
         </div>
     </div>

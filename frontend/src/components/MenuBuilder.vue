@@ -19,24 +19,9 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-5 space-y-5 pb-28 no-print">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-scoutViolet"></div>
-                <div class="flex justify-between items-center mb-1">
-                    <div class="flex items-center gap-2 text-scoutViolet">
-                        <svg xmlns="http://www.w3.org/2000/xl" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                        <h3 class="font-bold text-gray-800">17 Présents</h3>
-                    </div>
-                    <button class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-medium">Modifier</button>
-                </div>
-                <p class="text-xs text-gray-500 ml-7">14 Pionniers, 3 Chefs. <br> <span class="italic text-gray-400">Louis D. est absent.</span></p>
-            </div>
-
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                 <div class="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
                     <h3 class="font-bold text-gray-800">Composition du menu</h3>
-                    <span class="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase tracking-wide">
-                        🥬 Équilibré
-                    </span>
                 </div>
 
                 <div v-for="(recipe, index) in currentMealRecipes" :key="recipe.id || index" class="flex items-center justify-between py-2 border-b border-gray-50">

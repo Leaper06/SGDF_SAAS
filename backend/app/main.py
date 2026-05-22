@@ -2,6 +2,7 @@ import os
 import uuid
 import logging
 from flask import Flask, request, jsonify
+import supabase
 from database import get_db
 from flask_cors import CORS
 from flask import request, jsonify 
@@ -118,6 +119,9 @@ def get_adherents():
     logging.info(f"Requête adhérents autorisée pour le token : {token}")
     user_session = ACTIVE_SESSIONS[token]["http"]
     
+    
+    chef_adherent_id = ACTIVE_SESSIONS[token].get("adherent_id")
+    
     # Récupération du gros dictionnaire {unit_name, adherents}
     adherents_result = scrape_liste_adherents(user_session)
     data = adherents_result.get("adherents", [])
@@ -129,7 +133,8 @@ def get_adherents():
     return jsonify({
         "unit_name": unit_name,
         "count": max(0, len(data) - 1),
-        "data": data
+        "data": data,
+        "adherent_id": chef_adherent_id # <-- ON LE GLISSE ICI !
     }), 200
 
 @app.route('/api/test-db', methods=['GET'])
@@ -580,6 +585,8 @@ def create_recipe():
     except Exception as e:
         print("Erreur lors de la création de la recette :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+
 # --- ROUTE : GÉNÉRER LE BORDEREAU DE COURSES D'UN REPAS ---
 @app.route('/api/meals/<meal_id>/shopping-list', methods=['GET'])
 def get_shopping_list(meal_id):
@@ -653,6 +660,74 @@ def get_shopping_list(meal_id):
 
     except Exception as e:
         print("Erreur lors du calcul des courses :", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+# route pour calculer la liste de courses globale d'un week-end entier (tous les repas de tous les créneaux du camp)
+@app.route('/api/camps/<camp_id>/shopping-list', methods=['GET'])
+def get_camp_shopping_list(camp_id):
+    """Calcule la liste de courses globale pour tout le week-end"""
+    try:
+        db = get_db()
+        adults = int(request.args.get('adults', 0))
+        children = int(request.args.get('children', 0))
+
+        # 1. On trouve tous les créneaux repas de CE week-end
+        slots_res = db.table('planning_slots').select('id').eq('camp_id', camp_id).eq('slot_type', 'repas').execute()
+        slot_ids = [s['id'] for s in slots_res.data]
+        if not slot_ids:
+            return jsonify({"status": "success", "data": []}), 200
+
+        # 2. On trouve les repas correspondants
+        meals_res = db.table('meals').select('id').in_('planning_slot_id', slot_ids).execute()
+        meal_ids = [m['id'] for m in meals_res.data]
+        if not meal_ids:
+            return jsonify({"status": "success", "data": []}), 200
+
+        # 3. On trouve toutes les recettes de tous ces repas
+        mr_res = db.table('meal_recipes').select('recipe_id').in_('meal_id', meal_ids).execute()
+        recipe_ids = [item['recipe_id'] for item in mr_res.data]
+        if not recipe_ids:
+            return jsonify({"status": "success", "data": []}), 200
+
+        # 4. On récupère les ingrédients
+        ing_res = db.table('recipe_ingredients').select(
+            'qty_adult, qty_child, ingredients(name, unit_type, category)'
+        ).in_('recipe_id', recipe_ids).execute()
+
+        # 5. On fusionne et on arrondit !
+        import math
+        shopping_dict = {}
+
+        for item in ing_res.data:
+            ing_info = item['ingredients']
+            if not ing_info: continue
+                
+            ing_name = ing_info['name']
+            unit = ing_info['unit_type']
+            category = ing_info['category']
+
+            qty_raw = (item.get('qty_adult', 0) * adults) + (item.get('qty_child', 0) * children)
+            
+            if ing_name in shopping_dict:
+                # Cumul avec arrondi global
+                shopping_dict[ing_name]['qty'] = math.ceil(shopping_dict[ing_name]['qty_raw_accumulated'] + qty_raw)
+                shopping_dict[ing_name]['qty_raw_accumulated'] += qty_raw
+            else:
+                shopping_dict[ing_name] = {
+                    'name': ing_name,
+                    'qty': math.ceil(qty_raw),
+                    'qty_raw_accumulated': qty_raw,
+                    'unit': unit,
+                    'category': category
+                }
+
+        result = [{'name': v['name'], 'qty': v['qty'], 'unit': v['unit'], 'category': v['category']} for v in shopping_dict.values()]
+        result.sort(key=lambda x: x['name'])
+
+        return jsonify({"status": "success", "data": result}), 200
+
+    except Exception as e:
+        print("Erreur globale courses :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 # ==========================================
 # GESTION DES FICHIERS (UPLOADS)
@@ -752,6 +827,152 @@ def update_progression(adherent_id):
         print("Erreur de sauvegarde de progression :", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/tents', methods=['GET'])
+def get_tents():
+    group_name = request.args.get('group_name')
+    camp_id = request.args.get('camp_id') # Nouveau paramètre reçu de Vue.js !
+    
+    if not group_name:
+        return jsonify({"error": "Nom de groupe manquant"}), 400
+
+    db = get_db()
+    # 1. On récupère le catalogue complet du groupe
+    tents_res = db.table('tents').select('*').eq('group_name', group_name).execute()
+    tentes = tents_res.data
+
+    # --- LE FILTRE ANTI-DOUBLON ---
+    if camp_id and camp_id != 'undefined':
+        # 2. On récupère les dates de NOTRE week-end
+        camp_res = db.table('camps').select('start_date, end_date').eq('id', camp_id).execute()
+        
+        if camp_res.data:
+            mon_debut = camp_res.data[0]['start_date']
+            ma_fin = camp_res.data[0]['end_date'] if camp_res.data[0]['end_date'] else mon_debut
+
+            # 3. On récupère tous les autres camps pour comparer les dates en Python
+            autres_camps_res = db.table('camps').select('id, start_date, end_date').neq('id', camp_id).execute()
+            
+            camps_en_meme_temps = []
+            for c in autres_camps_res.data:
+                son_debut = c['start_date']
+                sa_fin = c['end_date'] if c.get('end_date') else son_debut
+                
+                # Logique de chevauchement : (MonDébut <= SaFin) ET (MaFin >= SonDébut)
+                if mon_debut <= sa_fin and ma_fin >= son_debut:
+                    camps_en_meme_temps.append(c['id'])
+
+            # 4. S'il y a des camps en même temps, on regarde quelles tentes ils ont pris
+            if camps_en_meme_temps:
+                reserv_res = db.table('camp_tents').select('tent_id').in_('camp_id', camps_en_meme_temps).execute()
+                tentes_prises = [r['tent_id'] for r in reserv_res.data]
+
+                # 5. On marque ces tentes comme "deja_reservee" dans notre catalogue
+                for t in tentes:
+                    if t['id'] in tentes_prises:
+                        t['status'] = 'deja_reservee'
+                        
+    return jsonify({"status": "success", "data": tentes}), 200
+
+
+@app.route('/api/camps/<camp_id>/tents', methods=['GET', 'POST'])
+def manage_camp_tents(camp_id):
+    db = get_db()
+    
+    if request.method == 'GET':
+        # Récupère les tentes sélectionnées pour CE camp
+        res = db.table('camp_tents').select('tent_id').eq('camp_id', camp_id).execute()
+        selected = [row['tent_id'] for row in res.data]
+        return jsonify({"status": "success", "selected": selected}), 200
+        
+    if request.method == 'POST':
+        # Sauvegarde la nouvelle sélection du chef
+        data = request.json
+        selected_tents = data.get('tents', [])
+        
+        # On efface l'ancienne sélection et on met la nouvelle
+        db.table('camp_tents').delete().eq('camp_id', camp_id).execute()
+        
+        inserts = [{"camp_id": camp_id, "tent_id": t_id} for t_id in selected_tents]
+        if inserts:
+            db.table('camp_tents').insert(inserts).execute()
+            
+        return jsonify({"status": "success", "message": "Tentes mises à jour"}), 200
+
+
+@app.route('/api/incidents', methods=['GET', 'POST'])
+def manage_incidents():
+    db = get_db()
+    
+    if request.method == 'GET':
+        # Récupère la liste du matériel abîmé pour l'onglet global
+        res = db.table('tent_incidents').select('*, tents(name)').eq('status', 'a_reparer').execute()
+        return jsonify({"status": "success", "data": res.data}), 200
+        
+    if request.method == 'POST':
+        # Déclarer une tente abîmée
+        data = request.json
+        tent_id = data.get('tent_id')
+        
+        # 1. Créer l'incident
+        db.table('tent_incidents').insert({
+            "tent_id": tent_id,
+            "camp_id": data.get('camp_id'),
+            "description": data.get('description')
+        }).execute()
+        
+        # 2. Mettre à jour le statut de la tente
+        db.table('tents').update({"status": "abimee"}).eq('id', tent_id).execute()
+        
+        return jsonify({"status": "success", "message": "Incident déclaré"}), 200
+
+@app.route('/api/camps/<camp_id>/attendance', methods=['GET', 'POST'])
+def manage_attendance(camp_id):
+    db = get_db()
+    
+    if request.method == 'GET':
+        # On récupère tous les ID des présents pour ce week-end
+        res = db.table('camp_attendance').select('adherent_id').eq('camp_id', camp_id).execute()
+        present_ids = [row['adherent_id'] for row in res.data]
+        return jsonify({"status": "success", "present": present_ids}), 200
+        
+    if request.method == 'POST':
+        data = request.json
+        present_ids = data.get('present_ids', [])
+        
+        # 1. On efface les anciennes présences du camp
+        db.table('camp_attendance').delete().eq('camp_id', camp_id).execute()
+        
+        # 2. On insère les nouvelles
+        inserts = [{"camp_id": camp_id, "adherent_id": str(p_id)} for p_id in present_ids]
+        if inserts:
+            db.table('camp_attendance').insert(inserts).execute()
+            
+        return jsonify({"status": "success", "message": "Présences mises à jour"}), 200    
+
+@app.route('/api/activities/<activity_id>/responsibles', methods=['GET', 'POST'])
+def manage_activity_responsibles(activity_id):
+    db = get_db()
+    
+    if request.method == 'GET':
+        # On récupère les IDs des responsables
+        res = db.table('activity_responsibles').select('adherent_id').eq('activity_id', activity_id).execute()
+        ids = [row['adherent_id'] for row in res.data if row.get('adherent_id')]
+        return jsonify({"status": "success", "data": ids}), 200
+        
+    if request.method == 'POST':
+        data = request.json
+        adherent_ids = data.get('adherent_ids', [])
+        
+        # 1. Effacer les anciens responsables
+        db.table('activity_responsibles').delete().eq('activity_id', activity_id).execute()
+        
+        # 2. Ajouter les nouveaux
+        inserts = [{"activity_id": activity_id, "adherent_id": str(aid)} for aid in adherent_ids]
+        if inserts:
+            db.table('activity_responsibles').insert(inserts).execute()
+            
+        return jsonify({"status": "success", "message": "Responsables mis à jour"}), 200
+    
 if __name__ == '__main__':
     # On lance le serveur Flask sur le port 5000
     logging.info("Démarrage du serveur Flask...")
