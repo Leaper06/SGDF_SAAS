@@ -6,7 +6,7 @@
       </div>
       
       <div class="bg-white px-4 py-3 flex justify-between items-center border-b border-gray-100 shadow-sm z-10">
-        <button @click="currentView = 'calendar'" class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium">
+        <button @cclick="$router.push('/camps')" class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -478,19 +478,24 @@
 
 <script setup>
 import { 
-  currentView, selectedCamp, showCampMenu, modifierCamp, exporterPlanning, supprimerCamp, 
-  slotsParJour, joursOuverts, getTheme, formatHeure, formatTypeLabel, modifierSlot, 
+   exporterPlanning, slotsParJour, joursOuverts, modifierSlot, 
   supprimerSlot, ouvrirFicheActivite, ouvrirMenuRepas, ouvrirAjoutSlot, showAddSlotModal, 
-  fermerSlotModal, newSlot, joursDuCamp, formatCourt, soumettreSlot, showEditCampModal, 
-  fermerEditCampModal, editCampForm, soumettreModificationCamp, showEditSlotModal, 
+  fermerSlotModal, newSlot, soumettreSlot, showEditSlotModal, 
   fermerEditSlotModal, editSlot, soumettreModificationSlot, showInviteModal, inviteAdherentId,
-  ouvrirInviteModal, fermerInviteModal, soumettreInvitation, userToken, groupName, jeunes, chefs, genererBordereauGlobal, showShoppingModal, 
-  groupedShoppingList, 
-  fermerBordereau, 
-  exporterBordereauPDF
+  ouvrirInviteModal, fermerInviteModal, soumettreInvitation, jeunes, chefs, genererBordereauGlobal, showShoppingModal, 
+  groupedShoppingList, fermerBordereau, exporterBordereauPDF
 } from '../store.js'
-
+import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
+import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 import { ref, computed } from 'vue'
+import { 
+  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  showAddModal, newEvent, showEditCampModal, editCampForm,
+  moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
+  changerMois, selectionnerDate, fermerModal, fetchCamps, 
+  soumettreEvenement, modifierCamp, fermerEditCampModal, 
+  soumettreModificationCamp, supprimerCamp 
+} from '../stores/campsStore.js'
 // 1. On initialise les tableaux à vide
 const allTents = ref([])
 const selectedTents = ref([])

@@ -8,7 +8,7 @@
         </div>
 
         <div class="bg-white px-4 py-4 shadow-sm z-20 flex justify-between items-center sticky top-0 border-b border-gray-100 -mt-4 pt-6">
-            <button @click="currentView = 'recipe_catalog'" class="text-gray-500 hover:text-gray-800 text-sm font-medium">Annuler</button>
+            <button click="$router.push('/recipes')" class="text-gray-500 hover:text-gray-800 text-sm font-medium">Annuler</button>
             <div class="text-center">
                 <h2 class="text-sm font-extrabold text-gray-900">Nouvelle recette</h2>
                 <p class="text-[9px] text-gray-400 uppercase tracking-wider">Catalogue collectif</p>
@@ -88,7 +88,9 @@
 
 <script setup>
 import { 
-  currentView, partagerRecette, newRecipe, 
+  partagerRecette, newRecipe, 
   supprimerIngredientRecette, ajouterIngredientRecette 
 } from '../store.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
+import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 </script>

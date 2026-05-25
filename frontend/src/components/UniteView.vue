@@ -182,13 +182,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-// NOUVEAU : On importe tout depuis le store !
 import { 
-    userToken, logout, userEmail, needsIdentification, chefAdherentId, 
-    chefBranch, unitName, groupName, adherentsList, jeunes, chefs, 
+    adherentsList, jeunes, chefs, 
     fetchAdherents, isLoadingAdherents 
 } from '../store.js'
 
+import { 
+    userToken, loginToSGDF, isLoggingIn, loginError, userEmail, 
+    needsIdentification, chefAdherentId, unitName, groupName, chefBranch, logout 
+} from '../stores/authStore.js'
 const selectedMember = ref(null)
 const photoInput = ref(null)
 

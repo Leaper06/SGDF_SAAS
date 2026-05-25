@@ -9,7 +9,7 @@
 
         <div class="bg-white px-4 pt-6 pb-3 shadow-sm z-20 sticky top-0 border-b border-gray-100 -mt-4">
             <div class="flex justify-between items-center mb-4">
-                <button @click="currentView = 'planning'" class="text-gray-500 hover:text-gray-800 flex items-center gap-1">
+                <button @click="$router.push('/planning')" class="text-gray-500 hover:text-gray-800 flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     <span class="text-sm font-medium">Planning</span>
                 </button>
@@ -63,7 +63,10 @@
 
 <script setup>
 import { 
-  currentView, ouvrirEditeurRecette, searchQuery, 
+  ouvrirEditeurRecette, searchQuery, 
   selectedFilter, filteredRecipes, ajouterRecetteAuMenu 
 } from '../store.js'
+
+import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
 </script>

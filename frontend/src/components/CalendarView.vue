@@ -115,8 +115,18 @@
 <script setup>
 
 // Ajout de chefBranch dans les imports pour éviter que la page plante
-import { changerMois, moisActuelTexte, joursDuCalendrier, selectionnerDate, loading, campsDuMois, formatWeekday, formatDay, ouvrirPlanning, showAddModal, fermerModal, newEvent, soumettreEvenement, chefBranch } from '../store.js'
+import { ouvrirPlanning} from '../store.js'
+import { formatWeekday, formatDay } from '../utils/helpers.js'
 import { computed } from 'vue'
+import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
+import { 
+  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  showAddModal, newEvent, showEditCampModal, editCampForm,
+  moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
+  changerMois, selectionnerDate, fermerModal, fetchCamps, 
+  soumettreEvenement, modifierCamp, fermerEditCampModal, 
+  soumettreModificationCamp, supprimerCamp 
+} from '../stores/campsStore.js'
 
 const branchStyles = computed(() => {
   if (chefBranch.value === 'Louja') {

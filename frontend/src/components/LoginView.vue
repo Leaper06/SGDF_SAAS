@@ -62,8 +62,15 @@
 
 <script setup>
 import { ref } from 'vue'
-import { loginToSGDF, isLoggingIn, loginError } from '../store.js'
-
+import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
+import { 
+  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  showAddModal, newEvent, showEditCampModal, editCampForm,
+  moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
+  changerMois, selectionnerDate, fermerModal, fetchCamps, 
+  soumettreEvenement, modifierCamp, fermerEditCampModal, 
+  soumettreModificationCamp, supprimerCamp 
+} from '../stores/campsStore.js'
 const username = ref('')
 const password = ref('')
 

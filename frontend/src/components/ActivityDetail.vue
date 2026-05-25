@@ -200,7 +200,7 @@
 
 <script setup>
 import { 
-  selectedSlot, formatTypeLabel, fermerFicheActivite, sauvegarderFicheActivite, 
+  selectedSlot, fermerFicheActivite, sauvegarderFicheActivite, 
   currentActivity, isEditingImaginaire, calculerHeureEtape, modifierEtape, 
   supprimerEtape, isAddingStep, newStep, ajouterEtape, ouvrirAjoutEtape, 
   toggleMateriel, newMaterialName, ajouterMateriel 
@@ -211,6 +211,15 @@ import {
   activityResponsibles, ouvrirGestionResponsables, toggleResponsible, 
   sauvegarderResponsables
 } from '../store.js'
+import { formatTypeLabel, formatHeure, getTheme, formatCourt } from '../utils/helpers.js'
+import { 
+  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  showAddModal, newEvent, showEditCampModal, editCampForm,
+  moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
+  changerMois, selectionnerDate, fermerModal, fetchCamps, 
+  soumettreEvenement, modifierCamp, fermerEditCampModal, 
+  soumettreModificationCamp, supprimerCamp 
+} from '../stores/campsStore.js'
 
 import { onMounted } from 'vue'
 import { chargerResponsablesActivite } from '../store.js'
@@ -218,4 +227,6 @@ import { chargerResponsablesActivite } from '../store.js'
 onMounted(() => {
     chargerResponsablesActivite()
 })
+
+import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
 </script>

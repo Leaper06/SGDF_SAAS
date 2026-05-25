@@ -43,7 +43,7 @@
                     <p class="text-sm text-gray-400 italic font-medium">Ce menu est vide. Ajoute un plat !</p>
                 </div>
 
-                <button @click="currentView = 'recipe_catalog'" class="w-full mt-4 border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm font-medium text-gray-500 hover:border-scoutViolet hover:text-scoutViolet transition-colors flex justify-center items-center gap-2">
+                <button @click="$router.push('/recipes')" class="w-full mt-4 border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm font-medium text-gray-500 hover:border-scoutViolet hover:text-scoutViolet transition-colors flex justify-center items-center gap-2">
                     <span class="text-lg leading-none">+</span> Ajouter un plat / Recette
                 </button>
             </div>
@@ -124,11 +124,13 @@
 
 <script setup>
 import { 
-  selectedSlot, currentView, fermerMenuRepas, currentMealRecipes, 
-  getRecipeIcon, retirerRecette, genererBordereau, shoppingList, 
+  selectedSlot, fermerMenuRepas, currentMealRecipes, 
+  retirerRecette, genererBordereau, shoppingList, 
   showShoppingModal, fermerBordereau, rabEnabled, groupedShoppingList, 
   exporterBordereauPDF
 } from '../store.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
+import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 </script>
 
 <style>
