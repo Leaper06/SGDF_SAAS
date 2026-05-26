@@ -63,9 +63,13 @@
 
 <script setup>
 import { 
-  ouvrirEditeurRecette, searchQuery, 
-  selectedFilter, filteredRecipes, ajouterRecetteAuMenu 
-} from '../store.js'
+  searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
+  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
+  supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
+  fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
+} from '../stores/intendanceStore.js'
+
 
 import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'

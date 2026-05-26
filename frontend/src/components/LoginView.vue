@@ -77,4 +77,5 @@ const password = ref('')
 const handleLogin = () => {
     loginToSGDF(username.value, password.value)
 }
+import { API_BASE_URL } from '../api/config.js'
 </script>

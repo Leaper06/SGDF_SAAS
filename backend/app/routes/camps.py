@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from database import get_db
 from services.session_manager import get_user_session
 
+
 camps_bp = Blueprint('camps', __name__)
 
 @camps_bp.route('/api/camps', methods=['GET'])

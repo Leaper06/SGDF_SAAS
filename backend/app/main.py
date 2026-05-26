@@ -4,6 +4,7 @@ from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
+
 # --- IMPORTS DES BLUEPRINTS ---
 from routes.auth import auth_bp
 from routes.camps import camps_bp
@@ -11,7 +12,7 @@ from routes.planning import planning_bp
 from routes.intendance import intendance_bp
 from routes.adherents import adherents_bp
 from routes.logistique import logistique_bp
-
+from  routes.tents import tents_bp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
@@ -24,6 +25,7 @@ app.register_blueprint(planning_bp)
 app.register_blueprint(intendance_bp)
 app.register_blueprint(adherents_bp)
 app.register_blueprint(logistique_bp)
+app.register_blueprint(tents_bp)
 
 @app.route('/api/status', methods=['GET'])
 def health_check():
@@ -59,4 +61,4 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

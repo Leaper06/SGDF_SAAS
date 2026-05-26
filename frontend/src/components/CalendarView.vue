@@ -115,7 +115,6 @@
 <script setup>
 
 // Ajout de chefBranch dans les imports pour éviter que la page plante
-import { ouvrirPlanning} from '../store.js'
 import { formatWeekday, formatDay } from '../utils/helpers.js'
 import { computed } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
@@ -127,7 +126,7 @@ import {
   soumettreEvenement, modifierCamp, fermerEditCampModal, 
   soumettreModificationCamp, supprimerCamp 
 } from '../stores/campsStore.js'
-
+import{ouvrirPlanning} from '../stores/planningStore.js'
 const branchStyles = computed(() => {
   if (chefBranch.value === 'Louja') {
     return {

@@ -182,15 +182,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { 
-    adherentsList, jeunes, chefs, 
-    fetchAdherents, isLoadingAdherents 
-} from '../store.js'
-
+import { adherentsList, isLoadingAdherents, jeunes, chefs, fetchAdherents } from '../stores/adherentsStore.js'
 import { 
     userToken, loginToSGDF, isLoggingIn, loginError, userEmail, 
     needsIdentification, chefAdherentId, unitName, groupName, chefBranch, logout 
 } from '../stores/authStore.js'
+import { API_BASE_URL } from '../api/config.js'
 const selectedMember = ref(null)
 const photoInput = ref(null)
 
@@ -239,7 +236,7 @@ const uploadToServer = async (file, type) => {
     formData.append('type', type) // 'photo' ou 'fiche'
 
     try {
-        const response = await fetch(`http://localhost:5000/api/adherents/${selectedMember.value.id}/upload`, {
+        const response = await fetch(`${API_BASE_URL}/adherents/${selectedMember.value.id}/upload`, {
             method: 'POST',
             body: formData
         })
@@ -291,7 +288,8 @@ const sauvegarderProgression = async () => {
             progression_action: selectedMember.value.progressionAction
         }
 
-        const response = await fetch(`http://localhost:5000/api/adherents/${selectedMember.value.id}/progression`, {
+        // On utilise la variable dynamique API_BASE_URL au lieu de localhost
+        const response = await fetch(`${API_BASE_URL}/adherents/${selectedMember.value.id}/progression`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -302,18 +300,16 @@ const sauvegarderProgression = async () => {
         if (json.status !== 'success') {
             alert("Erreur lors de la sauvegarde : " + json.message)
         }
-        // Pas besoin d'alerte de succès, le changement de texte du bouton suffit pour l'UX !
     } catch (error) {
         console.error("Erreur de sauvegarde progression :", error)
         alert("Impossible de joindre le serveur.")
     } finally {
-        // Petit délai pour laisser le temps de lire "Enregistrement..."
         setTimeout(() => { isSavingProgression.value = false }, 500)
     }
 }
 const confirmerIdentite = async (chefChoisi) => {
     try {
-        const response = await fetch('http://localhost:5000/api/chef/identify', {
+        const response = await fetch(`${API_BASE_URL}/chef/identify`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

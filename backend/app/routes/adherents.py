@@ -1,11 +1,10 @@
 import logging
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request, current_app
 from database import get_db
 from services.session_manager import get_user_session
 from services.sgdf_adherents import scrape_liste_adherents
 import os
 from werkzeug.utils import secure_filename
-from flask import request, current_app
 
 adherents_bp = Blueprint('adherents', __name__)
 
@@ -52,7 +51,6 @@ def upload_adherent_fiche(adherent_id):
     Gère l'upload d'un fichier (ex: fiche sanitaire) pour un adhérent spécifique.
     Sauvegarde le fichier localement et met à jour l'URL dans Supabase.
     """
-    # 1. Vérification de la présence du fichier dans la requête
     if 'file' not in request.files:
         return jsonify({"error": "Aucun fichier envoyé"}), 400
         
@@ -61,24 +59,18 @@ def upload_adherent_fiche(adherent_id):
         return jsonify({"error": "Nom de fichier vide"}), 400
         
     try:
-        # 2. Sauvegarde physique du fichier sur le serveur
-        # On préfixe le nom du fichier par l'ID de l'adhérent pour éviter les doublons
         filename = secure_filename(f"{adherent_id}_{file.filename}")
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         
-        # 3. Génération de l'URL publique
-        file_url = f"http://localhost:5000/uploads/{filename}"
+        file_url = f"{request.host_url}uploads/{filename}"
         
-        # 4. Mise à jour de la base de données (Table adherent_extras)
         db = get_db()
         existing = db.table('adherent_extras').select('id').eq('adherent_id', adherent_id).execute()
         
         if existing.data:
-            # L'adhérent a déjà des métadonnées, on met à jour la fiche
             db.table('adherent_extras').update({"fiche_url": file_url}).eq('adherent_id', adherent_id).execute()
         else:
-            # Création de l'entrée pour cet adhérent
             db.table('adherent_extras').insert({
                 "adherent_id": adherent_id,
                 "fiche_url": file_url
@@ -88,4 +80,40 @@ def upload_adherent_fiche(adherent_id):
 
     except Exception as e:
         logging.error(f"Erreur lors de l'upload de la fiche pour {adherent_id} : {e}")
+        return jsonify({"error": "Erreur serveur lors de la sauvegarde"}), 500
+
+@adherents_bp.route('/api/adherents/<adherent_id>/progression', methods=['PUT', 'OPTIONS'])
+def update_adherent_progression(adherent_id):
+    """
+    Met à jour ou crée la progression personnelle (symbole et action)
+    d'un adhérent spécifique dans Supabase.
+    """
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    try:
+        data = request.json or {}
+        progression_symbole = data.get('progression_symbole', '')
+        progression_action = data.get('progression_action', '')
+
+        db = get_db()
+        existing = db.table('adherent_extras').select('id').eq('adherent_id', adherent_id).execute()
+
+        payload = {
+            "progression_symbole": progression_symbole,
+            "progression_action": progression_action
+        }
+
+        if existing.data:
+            # Si l'adhérent a déjà une ligne (fiche ou photo), on met à jour les champs de progression
+            db.table('adherent_extras').update(payload).eq('adherent_id', adherent_id).execute()
+        else:
+            # Sinon, on crée la première ligne pour cet adhérent
+            payload["adherent_id"] = adherent_id
+            db.table('adherent_extras').insert(payload).execute()
+
+        return jsonify({"status": "success"}), 200
+
+    except Exception as e:
+        logging.error(f"Erreur de modification de la progression pour {adherent_id} : {e}")
         return jsonify({"error": "Erreur serveur lors de la sauvegarde"}), 500

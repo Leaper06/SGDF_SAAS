@@ -123,14 +123,28 @@
 </template>
 
 <script setup>
-import { 
-  selectedSlot, fermerMenuRepas, currentMealRecipes, 
-  retirerRecette, genererBordereau, shoppingList, 
-  showShoppingModal, fermerBordereau, rabEnabled, groupedShoppingList, 
-  exporterBordereauPDF
-} from '../store.js'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
-import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
+import { getTheme, formatHeure, formatTypeLabel, formatCourt, getRecipeIcon } from '../utils/helpers.js'
+import { 
+  selectedSlot, slotsList, showEditSlotModal, slotToEditId, editSlot, joursOuverts, 
+  showAddSlotModal, newSlot, currentActivity, isEditingImaginaire, newMaterialName, 
+  isAddingStep, editingStepIndex, newStep, showResponsiblesModal, activityResponsibles, 
+  presentChefs, showInviteModal, inviteAdherentId, slotsParJour, selectedResponsiblesDetails, 
+  ouvrirPlanning, fetchSlots, exporterPlanning, ouvrirAjoutSlot, fermerSlotModal, soumettreSlot, 
+  modifierSlot, fermerEditSlotModal, soumettreModificationSlot, supprimerSlot, ouvrirFicheActivite, 
+  sauvegarderFicheActivite, fermerFicheActivite, ajouterMateriel, toggleMateriel, calculerHeureEtape, 
+  ouvrirAjoutEtape, modifierEtape, supprimerEtape, ajouterEtape, ouvrirGestionResponsables, 
+  toggleResponsible, sauvegarderResponsables, chargerResponsablesActivite, ouvrirInviteModal, 
+  fermerInviteModal, soumettreInvitation
+} from '../stores/planningStore.js'
+
+import { 
+  searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
+  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
+  supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
+  fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
+} from '../stores/intendanceStore.js'
 </script>
 
 <style>

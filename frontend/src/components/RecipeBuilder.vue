@@ -88,9 +88,12 @@
 
 <script setup>
 import { 
-  partagerRecette, newRecipe, 
-  supprimerIngredientRecette, ajouterIngredientRecette 
-} from '../store.js'
+  searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
+  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
+  supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
+  fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
+} from '../stores/intendanceStore.js'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
 import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 </script>

@@ -10,7 +10,6 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { chargerCatalogueRecettes } from './store.js'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from './stores/authStore.js'
 import { 
   selectedCamp, campsList, loading, currentDate, showCampMenu,
@@ -20,8 +19,14 @@ import {
   soumettreEvenement, modifierCamp, fermerEditCampModal, 
   soumettreModificationCamp, supprimerCamp 
 } from './stores/campsStore.js'
+import { 
+  searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
+  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
+  supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
+  fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
+} from './stores/intendanceStore.js'
 
-// Plus besoin d'importer LoginView, UniteView, etc. Le routeur s'en occupe !
 import NavBar from './components/NavBar.vue'
 
 onMounted(() => {

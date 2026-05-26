@@ -1,4 +1,5 @@
 <template>
+    <div>
     <div class="flex-1 flex flex-col min-h-0 relative bg-gray-50">
       <div class="bg-scoutBlue text-white pt-6 pb-4 px-4 rounded-b-3xl shadow-md z-20 flex flex-col items-center transition-all">
         <h1 class="text-2xl font-bold tracking-wide">PolyMaîtrise</h1>
@@ -6,7 +7,7 @@
       </div>
       
       <div class="bg-white px-4 py-3 flex justify-between items-center border-b border-gray-100 shadow-sm z-10">
-        <button @cclick="$router.push('/camps')" class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium">
+        <button @click="$router.push('/camps')" class="flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -307,6 +308,7 @@
                     <button @click="showTentsModal = false" class="p-2 bg-gray-200 hover:bg-gray-300 rounded-full text-gray-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
+
                 </div>
                 
                 <div class="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50/30">
@@ -318,23 +320,36 @@
                           selectedTents.includes(tente.id) ? 'border-gray-800 bg-gray-900 text-white shadow-md' : 'border-gray-200 bg-white'
                       ]">
                       
-                      <div class="flex justify-between items-center">
-                          <div>
-                              <h4 :class="['font-bold flex items-center gap-2', selectedTents.includes(tente.id) ? 'text-white' : 'text-gray-900']">
-                                  {{ tente.name }}
-                                  <span v-if="tente.status === 'abimee'" class="text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Abîmée</span>
-                                  <span v-if="tente.status === 'deja_reservee'" class="text-[9px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Prise</span>
-                              </h4>
-                              <p :class="['text-xs mt-1 font-medium', selectedTents.includes(tente.id) ? 'text-gray-300' : 'text-gray-500']">{{ tente.capacity }} places</p>
-                          </div>
-                          
-                          <div :class="[
-                              'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors', 
-                              selectedTents.includes(tente.id) ? 'bg-white border-white text-gray-900' : 'border-gray-300 bg-transparent'
-                          ]">
-                              <svg v-if="selectedTents.includes(tente.id)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                          </div>
-                      </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 :class="['font-bold flex items-center gap-2', selectedTents.includes(tente.id) ? 'text-white' : 'text-gray-900']">
+                                    {{ tente.name }}
+                                    <span v-if="tente.status === 'abimee'" class="text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Abîmée</span>
+                                    <span v-if="tente.status === 'deja_reservee'" class="text-[9px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-black uppercase tracking-wider">Prise</span>
+                                </h4>
+                                <p :class="['text-xs mt-1 font-medium', selectedTents.includes(tente.id) ? 'text-gray-300' : 'text-gray-500']">
+                                    {{ tente.capacity }} places
+                                </p>
+                                
+                                <button 
+                                    v-if="selectedTents.includes(tente.id)" 
+                                    @click.stop="ouvrirDeclarationIncident(tente)" 
+                                    class="mt-2 text-[10px] uppercase font-bold text-orange-500 hover:text-orange-400 flex items-center transition-colors gap-1"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Signaler un problème
+                                </button>
+                            </div>
+                            
+                            <div :class="[
+                                'w-6 h-6 rounded border-2 flex items-center justify-center transition-colors shrink-0', 
+                                selectedTents.includes(tente.id) ? 'bg-white border-white text-gray-900' : 'border-gray-300 bg-transparent'
+                            ]">
+                                <svg v-if="selectedTents.includes(tente.id)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
                   </div>
                 </div>
                 
@@ -409,7 +424,8 @@
     </div>
 </transition>
 <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-full">
-            <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex flex-col justify-end printable-modal">
+            
+        <div v-if="showShoppingModal" class="fixed inset-0 z-50 flex flex-col justify-end printable-modal">
                 <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity no-print" @click="fermerBordereau"></div>
                 
                 <div class="relative bg-gray-50 w-full h-[90%] rounded-t-3xl shadow-2xl flex flex-col z-10 overflow-hidden printable-content">
@@ -474,20 +490,55 @@
                 </div>
             </div>
         </transition>
+    <div v-if="showIncidentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-6 bg-orange-50 border-b border-orange-100 flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="text-xl font-black text-gray-900 tracking-tight">Signaler un incident</h3>
+                <p class="text-sm font-medium text-orange-600 mt-1">Tente : {{ incidentForm.nom }}</p>
+            </div>
+            <button @click="fermerDeclarationIncident" class="p-2 bg-white text-gray-400 hover:text-gray-600 rounded-full shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-1 space-y-4 bg-gray-50/50">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">État de la tente</label>
+                <select v-model="incidentForm.etat" class="w-full bg-white border border-gray-200 text-gray-900 font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50">
+                    <option value="Endommagée">Endommagée (Toile déchirée, tendeur cassé...)</option>
+                    <option value="Incomplète">Incomplète (Manque sardines, piquet...)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description du problème</label>
+                <textarea v-model="incidentForm.notes_incident" rows="4" placeholder="Ex: Il manque 4 sardines et la fermeture de la porte coince..." class="w-full bg-white border border-gray-200 text-gray-900 font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none"></textarea>
+            </div>
+        </div>
+        
+        <div class="p-6 bg-white border-t border-gray-100 shrink-0">
+            <button @click="soumettreIncident" class="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors">
+                Enregistrer l'incident
+            </button>
+        </div>
+    </div>
+</div>
+    </div>
 </template>
 
 <script setup>
+import { showIncidentModal, incidentForm, ouvrirDeclarationIncident, fermerDeclarationIncident, soumettreIncident } from '../stores/logistiqueStore.js'
 import { 
-   exporterPlanning, slotsParJour, joursOuverts, modifierSlot, 
-  supprimerSlot, ouvrirFicheActivite, ouvrirMenuRepas, ouvrirAjoutSlot, showAddSlotModal, 
-  fermerSlotModal, newSlot, soumettreSlot, showEditSlotModal, 
-  fermerEditSlotModal, editSlot, soumettreModificationSlot, showInviteModal, inviteAdherentId,
-  ouvrirInviteModal, fermerInviteModal, soumettreInvitation, jeunes, chefs, genererBordereauGlobal, showShoppingModal, 
-  groupedShoppingList, fermerBordereau, exporterBordereauPDF
-} from '../store.js'
-import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
+  searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
+  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
+  supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
+  fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
+} from '../stores/intendanceStore.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, groupName } from '../stores/authStore.js'
 import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 import { ref, computed } from 'vue'
+import { adherentsList, isLoadingAdherents, jeunes, chefs, fetchAdherents } from '../stores/adherentsStore.js'
 import { 
   selectedCamp, campsList, loading, currentDate, showCampMenu,
   showAddModal, newEvent, showEditCampModal, editCampForm,
@@ -496,6 +547,19 @@ import {
   soumettreEvenement, modifierCamp, fermerEditCampModal, 
   soumettreModificationCamp, supprimerCamp 
 } from '../stores/campsStore.js'
+import { 
+  selectedSlot, slotsList, showEditSlotModal, slotToEditId, editSlot, joursOuverts, 
+  showAddSlotModal, newSlot, currentActivity, isEditingImaginaire, newMaterialName, 
+  isAddingStep, editingStepIndex, newStep, showResponsiblesModal, activityResponsibles, 
+  presentChefs, showInviteModal, inviteAdherentId, slotsParJour, selectedResponsiblesDetails, 
+  ouvrirPlanning, fetchSlots, exporterPlanning, ouvrirAjoutSlot, fermerSlotModal, soumettreSlot, 
+  modifierSlot, fermerEditSlotModal, soumettreModificationSlot, supprimerSlot, ouvrirFicheActivite, 
+  sauvegarderFicheActivite, fermerFicheActivite, ajouterMateriel, toggleMateriel, calculerHeureEtape, 
+  ouvrirAjoutEtape, modifierEtape, supprimerEtape, ajouterEtape, ouvrirGestionResponsables, 
+  toggleResponsible, sauvegarderResponsables, chargerResponsablesActivite, ouvrirInviteModal, 
+  fermerInviteModal, soumettreInvitation
+} from '../stores/planningStore.js'
+import { API_BASE_URL } from '../api/config.js' 
 // 1. On initialise les tableaux à vide
 const allTents = ref([])
 const selectedTents = ref([])
@@ -514,7 +578,7 @@ const chargerTentes = async () => {
         const nomGroupe = encodeURIComponent(groupName.value)
         
         // On prépare l'URL de base
-        let url = `http://localhost:5000/api/tents?group_name=${nomGroupe}`
+        let url = `${API_BASE_URL}/tents?group_name=${nomGroupe}`
         
         // NOUVEAU : Si on est sur un week-end précis, on envoie l'ID à Flask
         if (selectedCamp.value) {
@@ -536,7 +600,7 @@ const chargerTentes = async () => {
 // 3. Fonction pour récupérer les tentes déjà cochées pour CE week-end précis
 const chargerTentesDuCamp = async (campId) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/camps/${campId}/tents`, {
+        const response = await fetch(`${API_BASE_URL}/camps/${campId}/tents`, {
             headers: { 'Authorization': `Bearer ${userToken.value}` }
         })
         const data = await response.json()
@@ -569,7 +633,7 @@ const sauvegarderTentes = async () => {
     if (!selectedCamp.value) return
 
     try {
-        const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/tents`, {
+        const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/tents`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -595,7 +659,7 @@ const ouvrirGestionTentes = async () => {
     
     if (selectedCamp.value) {
         try {
-            const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/tents`, {
+            const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/tents`, {
                 headers: { 'Authorization': `Bearer ${userToken.value}` }
             })
             const data = await response.json()
@@ -631,7 +695,7 @@ const ouvrirGestionPresence = async () => {
     showAttendanceModal.value = true
     if (selectedCamp.value) {
         try {
-            const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/attendance`, {
+            const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/attendance`, {
                 headers: { 'Authorization': `Bearer ${userToken.value}` }
             })
             const data = await response.json()
@@ -648,7 +712,7 @@ const ouvrirGestionPresence = async () => {
 const sauvegarderPresence = async () => {
     if (!selectedCamp.value) return
     try {
-        const response = await fetch(`http://localhost:5000/api/camps/${selectedCamp.value.id}/attendance`, {
+        const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/attendance`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -666,7 +730,6 @@ const sauvegarderPresence = async () => {
     }
 }
 // Variable pour stocker la liste de courses
-const shoppingList = ref([])
 const isGeneratingList = ref(false)
 
 // Fonction pour séparer qui est jeune et qui est chef parmi les présents cochés
@@ -693,7 +756,7 @@ const genererListeCourses = async () => {
 
     // 2. On appelle Flask avec ces bons paramètres
     try {
-        const url = `http://localhost:5000/api/camps/${selectedCamp.value.id}/shopping-list?jeunes=${nbJeunesPresents}&adultes=${nbAdultesPresents}`
+        const url = `${API_BASE_URL}/camps/${selectedCamp.value.id}/shopping-list?jeunes=${nbJeunesPresents}&adultes=${nbAdultesPresents}`
         
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${userToken.value}` }

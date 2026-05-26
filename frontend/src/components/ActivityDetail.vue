@@ -14,7 +14,7 @@
 
         <div class="flex gap-2">
           <span class="text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider bg-orange-100 text-[#e85d22]">
-            {{ formatTypeLabel(selectedSlot.slot_type) }}
+            {{ formatTypeLabel(selectedSlot?.slot_type) }}
           </span>
           <span class="text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider bg-gray-100 text-gray-600">
             2H30
@@ -199,18 +199,19 @@
 
 
 <script setup>
+
 import { 
-  selectedSlot, fermerFicheActivite, sauvegarderFicheActivite, 
-  currentActivity, isEditingImaginaire, calculerHeureEtape, modifierEtape, 
-  supprimerEtape, isAddingStep, newStep, ajouterEtape, ouvrirAjoutEtape, 
-  toggleMateriel, newMaterialName, ajouterMateriel 
-} from '../store.js'
-import { 
-  
-  showResponsiblesModal, selectedResponsiblesDetails, presentChefs, 
-  activityResponsibles, ouvrirGestionResponsables, toggleResponsible, 
-  sauvegarderResponsables
-} from '../store.js'
+  selectedSlot, slotsList, showEditSlotModal, slotToEditId, editSlot, joursOuverts, 
+  showAddSlotModal, newSlot, currentActivity, isEditingImaginaire, newMaterialName, 
+  isAddingStep, editingStepIndex, newStep, showResponsiblesModal, activityResponsibles, 
+  presentChefs, showInviteModal, inviteAdherentId, slotsParJour, selectedResponsiblesDetails, 
+  ouvrirPlanning, fetchSlots, exporterPlanning, ouvrirAjoutSlot, fermerSlotModal, soumettreSlot, 
+  modifierSlot, fermerEditSlotModal, soumettreModificationSlot, supprimerSlot, ouvrirFicheActivite, 
+  sauvegarderFicheActivite, fermerFicheActivite, ajouterMateriel, toggleMateriel, calculerHeureEtape, 
+  ouvrirAjoutEtape, modifierEtape, supprimerEtape, ajouterEtape, ouvrirGestionResponsables, 
+  toggleResponsible, sauvegarderResponsables, chargerResponsablesActivite, ouvrirInviteModal, 
+  fermerInviteModal, soumettreInvitation
+} from '../stores/planningStore.js'
 import { formatTypeLabel, formatHeure, getTheme, formatCourt } from '../utils/helpers.js'
 import { 
   selectedCamp, campsList, loading, currentDate, showCampMenu,
@@ -222,7 +223,6 @@ import {
 } from '../stores/campsStore.js'
 
 import { onMounted } from 'vue'
-import { chargerResponsablesActivite } from '../store.js'
 
 onMounted(() => {
     chargerResponsablesActivite()
