@@ -116,7 +116,7 @@
 
 // Ajout de chefBranch dans les imports pour éviter que la page plante
 import { formatWeekday, formatDay } from '../utils/helpers.js'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
 import { 
   selectedCamp, campsList, loading, currentDate, showCampMenu,
@@ -171,4 +171,7 @@ const gererClicJour = (jour) => {
     selectionnerDate(jour.date)
   }
 }
+onMounted(async () => {
+    await fetchCamps()
+})
 </script>

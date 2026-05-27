@@ -13,6 +13,7 @@ from routes.intendance import intendance_bp
 from routes.adherents import adherents_bp
 from routes.logistique import logistique_bp
 from  routes.tents import tents_bp
+from routes.locations import locations_bp
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
@@ -26,6 +27,7 @@ app.register_blueprint(intendance_bp)
 app.register_blueprint(adherents_bp)
 app.register_blueprint(logistique_bp)
 app.register_blueprint(tents_bp)
+app.register_blueprint(locations_bp)
 
 @app.route('/api/status', methods=['GET'])
 def health_check():

@@ -1,11 +1,76 @@
 import { ref } from 'vue'
 import { API_BASE_URL } from '../api/config.js'
-
+import { groupName } from './authStore.js'
 // --- VARIABLES ---
 export const damagedTents = ref([])
 export const showIncidentModal = ref(false)
 export const incidentForm = ref({ tent_id: null, nom: '', etat: 'Endommagée', notes_incident: '' })
+export const locationForm = ref({
+    name: '',
+    address: '',
+    contact_info: '',
+    description: '',
+    is_shared: false
+})
+export const isSavingLocation = ref(false)
+export const locations = ref([])
+export const showLocationModal = ref(false)
 
+export const fetchLocations = async () => {
+    try {
+        // On récupère les lieux de notre groupe + les lieux partagés
+        const response = await fetch(`${API_BASE_URL}/locations?group_name=${groupName.value}`)
+        const json = await response.json()
+        if (json.status === 'success') locations.value = json.data
+    } catch (e) { console.error("Erreur lieux :", e) }
+}
+
+export const ouvrirAjoutLieu = () => {
+    locationForm.value = { name: '', address: '', contact_info: '', description: '', is_shared: false }
+    showLocationModal.value = true
+}
+
+export const soumettreLieu = async () => {
+    if (!locationForm.value.name) return alert("Le nom est obligatoire")
+    
+    isSavingLocation.value = true
+    try {
+        const response = await fetch(`${API_BASE_URL}/locations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...locationForm.value,
+                group_name: groupName.value
+                
+            })
+        })
+        
+        const json = await response.json()
+        if (json.status === 'success') {
+            showLocationModal.value = false
+            await fetchLocations()
+        }
+    } catch (e) { 
+        alert("Erreur lors de l'enregistrement") 
+    } finally { 
+        isSavingLocation.value = false 
+    }
+}
+
+// --- VARIABLES POUR LES DÉTAILS D'UN LIEU ---
+export const selectedLocation = ref(null)
+export const showLocationDetailsModal = ref(false)
+
+// --- FONCTIONS ---
+export const ouvrirDetailsLieu = (lieu) => {
+    selectedLocation.value = lieu
+    showLocationDetailsModal.value = true
+}
+
+export const fermerDetailsLieu = () => {
+    showLocationDetailsModal.value = false
+    selectedLocation.value = null
+}
 // --- FONCTIONS ---
 
 // 1. Récupérer toutes les tentes abîmées (pour l'onglet Logistique)

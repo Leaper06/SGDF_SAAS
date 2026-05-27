@@ -46,7 +46,7 @@ export const loginToSGDF = async (username, password) => {
     
     const json = await response.json()
     
-    if (response.ok && json.token) {
+  if (response.ok && json.token) {
       userToken.value = json.token
       userEmail.value = json.email 
       needsIdentification.value = json.needs_identification 
@@ -61,8 +61,14 @@ export const loginToSGDF = async (username, password) => {
         localStorage.setItem('sgdf_unit_name', json.unit_name)
       }
       
-      router.push('/unite')
-      // Note : On rechargera les camps depuis le composant Vue ou le routeur maintenant !
+      // NOUVEAU : Redirection intelligente
+      const redirectPath = localStorage.getItem('sgdf_redirect_after_login')
+      if (redirectPath) {
+          localStorage.removeItem('sgdf_redirect_after_login') // On nettoie
+          router.push(redirectPath) // On le ramène sur son brouillon
+      } else {
+          router.push('/unite') // Comportement normal
+      }
     } else {
       loginError.value = json.error || "Identifiants incorrects."
     }
