@@ -1,10 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class', // <-- LA LIGNE MAGIQUE À AJOUTER ICI
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', 
   theme: {
     extend: {
       colors: { 

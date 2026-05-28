@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0 transition-colors duration-300">
+    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900 md:pb-0 transition-colors duration-300">
       
       <!-- EN-TÊTE -->
       <div class="bg-scoutBlue dark:bg-gray-800 text-white pt-6 pb-4 px-4 rounded-b-3xl shadow-md z-20 flex flex-col items-center transition-colors shrink-0">
