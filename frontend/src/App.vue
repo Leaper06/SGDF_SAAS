@@ -32,6 +32,7 @@
 </template>
 
 <script setup>
+import { initTheme } from './stores/themeStore.js'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -86,7 +87,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // Nettoyage de l'écouteur
+  initTheme()
   window.removeEventListener('session-expired', handleSessionExpiration)
 })
 </script>

@@ -11,6 +11,7 @@ import MenuBuilder from './components/MenuBuilder.vue'
 import RecipeCatalog from './components/RecipeCatalog.vue'
 import RecipeBuilder from './components/RecipeBuilder.vue'
 import logitique from './components/LogistiqueView.vue'
+import ProfileView from './components/ProfileView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
@@ -22,6 +23,7 @@ const routes = [
   { path: '/recipes', name: 'recipes', component: RecipeCatalog },
   { path: '/recipe-builder', name: 'recipe_builder', component: RecipeBuilder },
   { path: '/logistique', name: 'logistique', component: logitique },
+  { path: '/profile', name: 'profile', component: ProfileView },
   // Si l'utilisateur tape une URL qui n'existe pas, on le renvoie vers ses camps
   { path: '/:pathMatch(.*)*', redirect: '/camps' }
 ]

@@ -5,7 +5,7 @@
     - [x] calule de quantité
   - [x] Activité
   - [x] Jeunes présent
-- [ ] Base de lieu partagé par groupe
+- [x] Base de lieu partagé par groupe
 - [x] fiche sanitaire
 
 modif / ajout
@@ -26,7 +26,7 @@ calendrier
   - [x] gérer le week-end -> gérer l'activité
 
   mathos : 
-  - [] gestion des tentes : 
+  - [x] gestion des tentes : 
   ajout : nom, nb place 
   dans la gestion d'un we les chefs on une page pour gérer les tentes en fonction du nombre de jeune. Ils voient une liste avec les tentes dispo(nom et nombre de place), peuvent en sélectionner pour le week-end. Si un chef d'une autre unité a aussi un week-end il ne verra pas les tentes selectionné par l'autre unité dans la liste. 
   dans la gestion de son camp, un chef peut "déclarer un incident" avec fiche en disant qu'elle tente est impacté et un petit bloc de texte pour dire ce qu'elle a. 

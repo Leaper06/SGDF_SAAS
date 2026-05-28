@@ -1,14 +1,15 @@
 <template>
-    <div class="h-full flex flex-col bg-gray-50">
+    <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         
-        <div class="bg-[#004267] px-6 pt-8 pb-4 shrink-0 rounded-b-[30px] shadow-md z-10">
-            <h2 class="text-2xl font-black text-white tracking-wider mb-6">Logistique</h2>
+        <!-- HEADER LOGISTIQUE -->
+        <div class="bg-[#004267] dark:bg-gray-800 px-6 pt-8 pb-4 shrink-0 rounded-b-[30px] shadow-md z-10 transition-colors">
+            <h2 class="text-2xl font-black text-white tracking-wider mb-6 transition-colors">Logistique</h2>
             
+            <!-- ONGLETS -->
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-
                 <button 
                     @click="activeTab = 'lieux'" 
-                    :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors', activeTab === 'lieux' ? 'bg-white text-[#004267] shadow-sm' : 'bg-[#003B5C] text-blue-100 hover:bg-[#003B5C]/80']"
+                    :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors', activeTab === 'lieux' ? 'bg-white dark:bg-gray-700 text-[#004267] dark:text-blue-300 shadow-sm' : 'bg-[#003B5C] dark:bg-gray-900 text-blue-100 dark:text-gray-400 hover:bg-[#003B5C]/80 dark:hover:bg-gray-900/80']"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -16,9 +17,9 @@
                     </svg>
                     Lieux de camp
                 </button>
-                                <button 
+                <button 
                     @click="activeTab = 'materiel'" 
-                    :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors', activeTab === 'materiel' ? 'bg-white text-[#004267] shadow-sm' : 'bg-[#003B5C] text-blue-100 hover:bg-[#003B5C]/80']"
+                    :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors', activeTab === 'materiel' ? 'bg-white dark:bg-gray-700 text-[#004267] dark:text-blue-300 shadow-sm' : 'bg-[#003B5C] dark:bg-gray-900 text-blue-100 dark:text-gray-400 hover:bg-[#003B5C]/80 dark:hover:bg-gray-900/80']"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 10l9-7 9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10z" />
@@ -29,7 +30,7 @@
 
                 <button 
                     disabled
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap bg-[#003B5C]/50 text-blue-200/50 cursor-not-allowed border border-dashed border-[#003B5C]"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap bg-[#003B5C]/50 dark:bg-gray-800/50 text-blue-200/50 dark:text-gray-500 cursor-not-allowed border border-dashed border-[#003B5C] dark:border-gray-600 transition-colors"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -41,64 +42,67 @@
 
         <div class="flex-1 overflow-y-auto p-6">
             
+            <!-- ONGLET MATÉRIEL -->
             <div v-if="activeTab === 'materiel'" class="space-y-6">
                 
                 <div class="flex justify-between items-end">
                     <div>
-                        <h3 class="text-lg font-extrabold text-gray-900">Parc matériel</h3>
-                        <p class="text-xs font-medium text-gray-500 mt-1">Éléments nécessitant une intervention</p>
+                        <h3 class="text-lg font-extrabold text-gray-900 dark:text-white transition-colors">Parc matériel</h3>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 transition-colors">Éléments nécessitant une intervention</p>
                     </div>
-                    <span class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-black">{{ damagedTents.length }} incident(s)</span>
+                    <span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg text-xs font-black transition-colors">{{ damagedTents.length }} incident(s)</span>
                 </div>
 
-                <div v-if="damagedTents.length === 0" class="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-200">
-                <div class="w-16 h-16 bg-blue-50 text-[#004267] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                    </svg>
+                <div v-if="damagedTents.length === 0" class="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 transition-colors">
+                    <div class="w-16 h-16 bg-blue-50 dark:bg-gray-700 text-[#004267] dark:text-blue-300 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 font-medium transition-colors">Tout le matériel est en parfait état !</p>
                 </div>
-                <p class="text-gray-500 font-medium">Tout le matériel est en parfait état !</p>
-            </div>
 
                 <div v-else class="space-y-4">
-                    <div v-for="tente in damagedTents" :key="tente.id" class="bg-white rounded-2xl p-5 border border-red-100 shadow-sm relative overflow-hidden">
-                        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500"></div>
+                    <div v-for="tente in damagedTents" :key="tente.id" class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-red-100 dark:border-red-900/50 shadow-sm relative overflow-hidden transition-colors">
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 dark:bg-red-600"></div>
                         
                         <div class="flex justify-between items-start mb-3 pl-2">
                             <div>
-                                <h4 class="font-bold text-gray-900 text-lg">{{ tente.name }}</h4>
-                                <p class="text-xs text-gray-500">{{ tente.capacity }} places</p>
+                                <h4 class="font-bold text-gray-900 dark:text-white text-lg transition-colors">{{ tente.name }}</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 transition-colors">{{ tente.capacity }} places</p>
                             </div>
-                            <button @click="marquerReparee(tente.id)" class="text-xs font-bold bg-green-50 text-green-600 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors flex items-center gap-2">
+                            <button @click="marquerReparee(tente.id)" class="text-xs font-bold bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 py-2 rounded-lg transition-colors flex items-center gap-2">
                                 ✅ Marquer réparée
                             </button>
                         </div>
                         
-                        <div class="bg-red-50 text-red-700 text-sm font-medium p-3 rounded-xl ml-2">
+                        <div class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm font-medium p-3 rounded-xl ml-2 transition-colors">
                             <span class="uppercase text-[10px] font-black tracking-wider block mb-1 opacity-70">Description de l'incident</span>
                             "{{ tente.notes_incident }}"
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- ONGLET LIEUX -->
             <div v-if="activeTab === 'lieux'" class="space-y-4 pb-24 flex flex-col h-full">    
                 <div class="flex justify-between items-end mb-4 pr-1">
                     <div>
-                        <h3 class="text-lg font-extrabold text-gray-900">Carnet d'adresses</h3>
-                        <p class="text-xs font-medium text-gray-500 mt-1">Lieux de camp du groupe et partagés</p>
+                        <h3 class="text-lg font-extrabold text-gray-900 dark:text-white transition-colors">Carnet d'adresses</h3>
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 transition-colors">Lieux de camp du groupe et partagés</p>
                     </div>
 
-                    <div class="bg-gray-100 p-1 rounded-lg flex items-center gap-1 shrink-0">
+                    <div class="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex items-center gap-1 shrink-0 transition-colors">
                         <button 
                             @click="switchMode('list')" 
-                            :class="['px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5', displayMode === 'list' ? 'bg-white text-[#004267] shadow-sm' : 'text-gray-400']"
+                            :class="['px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5', displayMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#004267] dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500']"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                             Liste
                         </button>
                         <button 
                             @click="switchMode('map')" 
-                            :class="['px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5', displayMode === 'map' ? 'bg-[#004267] text-white shadow-sm' : 'text-gray-400']"
+                            :class="['px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5', displayMode === 'map' ? 'bg-[#004267] dark:bg-blue-600 text-white shadow-sm' : 'text-gray-400 dark:text-gray-500']"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
                             Carte
@@ -106,12 +110,14 @@
                     </div>
                 </div>
 
-                <div v-if="displayMode === 'list'" class="space-y-8">
+                <!-- MODE LISTE -->
+                <div v-if="displayMode === 'list'" class="space-y-8 pb-36">
                     
+                    <!-- Nos adresses -->
                     <div>
-                        <h4 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4 pl-2">Nos adresses</h4>
+                        <h4 class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 pl-2 transition-colors">Nos adresses</h4>
                         
-                        <div v-if="mesLieux.length === 0" class="text-sm text-gray-500 italic pl-2 mb-4">
+                        <div v-if="mesLieux.length === 0" class="text-sm text-gray-500 dark:text-gray-400 italic pl-2 mb-4 transition-colors">
                             Vous n'avez pas encore enregistré de lieu.
                         </div>
 
@@ -120,21 +126,21 @@
                                 v-for="lieu in mesLieux" 
                                 :key="lieu.id" 
                                 @click="ouvrirDetailsLieu(lieu)"
-                                class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all active:scale-[0.98]"
+                                class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all active:scale-[0.98]"
                             >
                                 <div class="pr-4">
-                                    <h3 class="text-2xl font-black text-gray-900 leading-tight">{{ lieu.name }}</h3>
-                                    <span v-if="lieu.is_shared" class="inline-flex items-center gap-1 mt-2 text-[9px] bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded font-black uppercase tracking-wider">
+                                    <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight transition-colors">{{ lieu.name }}</h3>
+                                    <span v-if="lieu.is_shared" class="inline-flex items-center gap-1 mt-2 text-[9px] bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 px-2 py-1 rounded font-black uppercase tracking-wider transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
                                         Partagé au réseau
                                     </span>
                                 </div>
                                 
-                                <p class="text-sm text-gray-600 flex items-start gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     {{ lieu.address }}
                                 </p>
-                                <p v-if="lieu.contact_info" class="text-xs text-gray-500 italic flex items-center gap-1">
+                                <p v-if="lieu.contact_info" class="text-xs text-gray-500 dark:text-gray-400 italic flex items-center gap-1 transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                     {{ lieu.contact_info }}
                                 </p>
@@ -142,8 +148,9 @@
                         </div>
                     </div>
 
+                    <!-- Réseau partagé -->
                     <div v-if="lieuxPartages.length > 0">
-                        <h4 class="text-[11px] font-black text-[#004267] uppercase tracking-widest mb-4 pl-2 flex items-center gap-2">
+                        <h4 class="text-[11px] font-black text-[#004267] dark:text-blue-400 uppercase tracking-widest mb-4 pl-2 flex items-center gap-2 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
                             Réseau partagé
                         </h4>
@@ -153,21 +160,21 @@
                                 v-for="lieu in lieuxPartages" 
                                 :key="lieu.id" 
                                 @click="ouvrirDetailsLieu(lieu)"
-                                class="bg-blue-50/30 rounded-2xl p-5 border border-blue-100 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all active:scale-[0.98]"
+                                class="bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/30 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800/50 transition-all active:scale-[0.98]"
                             >
                                 <div class="pr-4">
-                                    <h3 class="text-2xl font-black text-[#004267] leading-tight">{{ lieu.name }}</h3>
-                                    <span class="inline-flex items-center gap-1 mt-2 text-[9px] bg-blue-100 text-[#004267] border border-blue-200 px-2 py-1 rounded font-black uppercase tracking-wider">
+                                    <h3 class="text-2xl font-black text-[#004267] dark:text-blue-300 leading-tight transition-colors">{{ lieu.name }}</h3>
+                                    <span class="inline-flex items-center gap-1 mt-2 text-[9px] bg-blue-100 dark:bg-blue-900/40 text-[#004267] dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-1 rounded font-black uppercase tracking-wider transition-colors">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                                         Via {{ lieu.group_name }}
                                     </span>
                                 </div>
                                 
-                                <p class="text-sm text-gray-600 flex items-start gap-2">
+                                <p class="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2 transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     {{ lieu.address }}
                                 </p>
-                                <p v-if="lieu.contact_info" class="text-xs text-gray-500 italic flex items-center gap-1">
+                                <p v-if="lieu.contact_info" class="text-xs text-gray-500 dark:text-gray-400 italic flex items-center gap-1 transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                     {{ lieu.contact_info }}
                                 </p>
@@ -176,138 +183,148 @@
                     </div>
                 </div>
 
-                <div v-if="displayMode === 'map'" class="w-full min-h-[500px] rounded-2xl overflow-hidden shadow-inner border border-gray-200 relative z-0 mt-2">
+                <!-- MODE CARTE -->
+                <div v-if="displayMode === 'map'" class="w-full min-h-[500px] rounded-2xl overflow-hidden shadow-inner border border-gray-200 dark:border-gray-700 relative z-0 mt-2 transition-colors">
                     <div id="map" class="w-full h-full"></div>
                 </div>
             </div>
+        </div>
 
-                <div 
-                    v-if="showLocationModal" 
-                    @click="showLocationModal = false"
-                    class="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-end sm:items-center z-50 p-0 sm:p-4"
-                >                
-                    <div 
-                            @click.stop
-                            class="bg-white rounded-t-[30px] sm:rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-2xl"
-                        >                    
-                    <div class="p-6 overflow-y-auto">
-                        <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-6"></div>
+        <!-- MODALE : AJOUTER UN LIEU -->
+        <div 
+            v-if="showLocationModal" 
+            @click="showLocationModal = false"
+            class="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center z-50 p-0 sm:p-4 transition-colors duration-300"
+        >                
+            <div 
+                @click.stop
+                class="bg-white dark:bg-gray-800 rounded-t-[30px] sm:rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-2xl transition-colors"
+            >                    
+                <div class="p-6 overflow-y-auto">
+                    <div class="w-12 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-6 transition-colors"></div>
 
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Nom du lieu</label>
-                                <input v-model="locationForm.name" type="text" placeholder="Ex: Base de la Guiche" class="w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#004267]/20 placeholder-gray-400">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Adresse complète</label>
-                                <textarea v-model="locationForm.address" rows="2" placeholder="Ex: 12 chemin des bois..." class="w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#004267]/20 resize-none placeholder-gray-400"></textarea>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Contact proprio</label>
-                                <input v-model="locationForm.contact_info" type="text" placeholder="Tel ou nom du propriétaire" class="w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#004267]/20 placeholder-gray-400">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Infos complémentaires</label>
-                                <textarea v-model="locationForm.description" rows="2" placeholder="Ex: Eau potable dispo, terrain plat..." class="w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#004267]/20 resize-none placeholder-gray-400"></textarea>
-                            </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 transition-colors">Nom du lieu</label>
+                            <input v-model="locationForm.name" type="text" placeholder="Ex: Base de la Guiche" class="w-full bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#004267]/20 dark:focus:ring-blue-500/30 placeholder-gray-400 dark:placeholder-gray-500 transition-colors">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 transition-colors">Adresse complète</label>
+                            <textarea v-model="locationForm.address" rows="2" placeholder="Ex: 12 chemin des bois..." class="w-full bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#004267]/20 dark:focus:ring-blue-500/30 resize-none placeholder-gray-400 dark:placeholder-gray-500 transition-colors"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 transition-colors">Contact proprio</label>
+                            <input v-model="locationForm.contact_info" type="text" placeholder="Tel ou nom du propriétaire" class="w-full bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#004267]/20 dark:focus:ring-blue-500/30 placeholder-gray-400 dark:placeholder-gray-500 transition-colors">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 transition-colors">Infos complémentaires</label>
+                            <textarea v-model="locationForm.description" rows="2" placeholder="Ex: Eau potable dispo, terrain plat..." class="w-full bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#004267]/20 dark:focus:ring-blue-500/30 resize-none placeholder-gray-400 dark:placeholder-gray-500 transition-colors"></textarea>
+                        </div>
 
-                            <div class="flex items-center justify-between pt-2 pb-2">
-                                <div>
-                                    <span class="block text-sm font-bold text-gray-900">Partager le lieu</span>
-                                    <span class="text-[10px] text-gray-500 font-medium">Le rendre visible aux autres groupes</span>
-                                </div>
-                                <button 
-                                    @click="locationForm.is_shared = !locationForm.is_shared"
-                                    :class="['w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300', locationForm.is_shared ? 'bg-[#004267]' : 'bg-gray-200']"
-                                >
-                                    <div :class="['bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-300', locationForm.is_shared ? 'translate-x-6' : 'translate-x-0']"></div>
-                                </button>
+                        <div class="flex items-center justify-between pt-2 pb-2">
+                            <div>
+                                <span class="block text-sm font-bold text-gray-900 dark:text-white transition-colors">Partager le lieu</span>
+                                <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium transition-colors">Le rendre visible aux autres groupes</span>
                             </div>
+                            <button 
+                                @click="locationForm.is_shared = !locationForm.is_shared"
+                                :class="['w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300', locationForm.is_shared ? 'bg-[#004267] dark:bg-blue-600' : 'bg-gray-200 dark:bg-gray-600']"
+                            >
+                                <div :class="['bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform duration-300', locationForm.is_shared ? 'translate-x-6' : 'translate-x-0']"></div>
+                            </button>
+                        </div>
 
-                            <div class="pt-4">
-                                <button @click="soumettreLieu" :disabled="isSavingLocation" class="w-full py-3.5 bg-[#004267] text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 flex justify-center items-center gap-2 hover:bg-[#003B5C] transition-colors">
-                                    {{ isSavingLocation ? 'Enregistrement...' : 'Enregistrer ce lieu' }}
-                                    <svg v-if="!isSavingLocation" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </button>
-                            </div>
+                        <div class="pt-4">
+                            <button @click="soumettreLieu" :disabled="isSavingLocation" class="w-full py-3.5 bg-[#004267] dark:bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 flex justify-center items-center gap-2 hover:bg-[#003B5C] dark:hover:bg-blue-700 transition-colors">
+                                {{ isSavingLocation ? 'Enregistrement...' : 'Enregistrer ce lieu' }}
+                                <svg v-if="!isSavingLocation" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
+
+        <!-- MODALE : DÉTAILS DU LIEU -->
         <div 
             v-if="showLocationDetailsModal" 
             @click="fermerDetailsLieu" 
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-end sm:items-center z-50 p-0 sm:p-4"
+            class="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center z-50 p-0 sm:p-4 transition-colors duration-300"
         >
             <div 
                 @click.stop 
-                class="bg-white rounded-t-[30px] sm:rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-2xl"
+                class="bg-white dark:bg-gray-800 rounded-t-[30px] sm:rounded-3xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] shadow-2xl transition-colors"
             >
                 <div class="p-6 overflow-y-auto">
-                    <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                    <div class="w-12 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-6 transition-colors"></div>
                     
                     <div class="flex justify-between items-start mb-6">
                         <div class="pr-4">
-                            <h3 class="text-2xl font-black text-gray-900 leading-tight">{{ selectedLocation?.name }}</h3>
+                            <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight transition-colors">{{ selectedLocation?.name }}</h3>
                             
-                            <span v-if="selectedLocation?.group_name === groupName && selectedLocation?.is_shared" class="inline-block mt-2 text-[9px] bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded font-black uppercase tracking-wider">
+                            <span v-if="selectedLocation?.group_name === groupName && selectedLocation?.is_shared" class="inline-block mt-2 text-[9px] bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 px-2 py-1 rounded font-black uppercase tracking-wider transition-colors">
                                 Ce lieu est visible par tous
                             </span>
                             
-                            <span v-if="selectedLocation?.group_name !== groupName" class="inline-block mt-2 text-[9px] bg-blue-50 text-[#004267] border border-blue-200 px-2 py-1 rounded font-black uppercase tracking-wider">
+                            <span v-if="selectedLocation?.group_name !== groupName" class="inline-block mt-2 text-[9px] bg-blue-50 dark:bg-blue-900/30 text-[#004267] dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-1 rounded font-black uppercase tracking-wider transition-colors">
                                 Partagé par le groupe : {{ selectedLocation?.group_name }}
                             </span>
                         </div>
-                        <button @click="fermerDetailsLieu" class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 rounded-full p-2 shrink-0">
+                        <button @click="fermerDetailsLieu" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors bg-gray-50 dark:bg-gray-700 dark:text-gray-300 rounded-full p-2 shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
 
                     <div class="space-y-5">
                         <div class="flex gap-4">
-                            <div class="mt-0.5 w-10 h-10 rounded-full bg-blue-50 text-[#004267] flex items-center justify-center shrink-0">
+                            <div class="mt-0.5 w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 text-[#004267] dark:text-blue-300 flex items-center justify-center shrink-0 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             </div>
                             <div>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Adresse</p>
-                                <p class="text-sm text-gray-900 font-medium leading-relaxed">{{ selectedLocation?.address || 'Non renseignée' }}</p>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 transition-colors">Adresse</p>
+                                <p class="text-sm text-gray-900 dark:text-gray-200 font-medium leading-relaxed transition-colors">{{ selectedLocation?.address || 'Non renseignée' }}</p>
                             </div>
                         </div>
 
                         <div class="flex gap-4">
-                            <div class="mt-0.5 w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <div class="mt-0.5 w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                             </div>
                             <div>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Contact</p>
-                                <p class="text-sm text-gray-900 font-medium">{{ selectedLocation?.contact_info || 'Aucun contact' }}</p>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 transition-colors">Contact</p>
+                                <p class="text-sm text-gray-900 dark:text-gray-200 font-medium transition-colors">{{ selectedLocation?.contact_info || 'Aucun contact' }}</p>
                             </div>
                         </div>
 
-                        <div class="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 mt-2">
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <div class="bg-gray-50/80 dark:bg-gray-900/50 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 mt-2 transition-colors">
+                            <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 Infos complémentaires
                             </p>
-                            <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ selectedLocation?.description || 'Aucune information complémentaire pour ce lieu.' }}</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed transition-colors">{{ selectedLocation?.description || 'Aucune information complémentaire pour ce lieu.' }}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- BOUTON FLOTTANT AJOUTER LIEU -->
+        <button 
+            @click="ouvrirAjoutLieu"
+            class="absolute bottom-28 right-6 w-14 h-14 bg-[#004267] dark:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-all z-40"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+        </button>
     </div>
-    
 </template>
 
 <script setup>
-import { ref, onMounted, computed,nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -316,12 +333,8 @@ import {
     locations, showLocationModal, locationForm, isSavingLocation, 
     ouvrirAjoutLieu, soumettreLieu, fetchLocations, selectedLocation, showLocationDetailsModal, ouvrirDetailsLieu, fermerDetailsLieu
 } from '../stores/logistiqueStore.js'
-
-onMounted(() => {
-    fetchDamagedTents()
-    fetchLocations()
-})
 import { groupName } from '../stores/authStore.js'
+
 // La variable qui gère l'onglet actuellement affiché
 const activeTab = ref('lieux')
 
@@ -338,6 +351,7 @@ onMounted(() => {
     fetchDamagedTents()
     fetchLocations()
 })
+
 const displayMode = ref('list') 
 let map = null
 
@@ -360,7 +374,7 @@ const initMap = async () => {
 
     
     const customIcon = L.divIcon({
-        html: `<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#004267]" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>`,
+        html: `<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#004267] dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>`,
         className: 'bg-transparent',
         iconSize: [32, 32],
         iconAnchor: [16, 32] // Aligne la pointe du SVG exactement sur la coordonnée
@@ -385,5 +399,4 @@ const switchMode = (mode) => {
         initMap()
     }
 }
-
 </script>
