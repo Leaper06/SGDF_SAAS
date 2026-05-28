@@ -156,6 +156,7 @@ export const ouvrirFicheActivite = async (slot) => {
     if (json.status === 'success') {
       currentActivity.value = { id: json.data.activity.id, imaginary_and_objectives: json.data.activity.imaginary_and_objectives || '', steps: json.data.steps || [], materials: json.data.materials || [] }
     }
+    await chargerResponsablesActivite()
   } catch (error) { console.error("Erreur :", error) }
 }
 export const sauvegarderFicheActivite = async () => {

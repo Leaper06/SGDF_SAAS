@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col h-full bg-bgLight dark:bg-gray-900 pb-20 transition-colors duration-300">
+    <div class="flex flex-col h-full bg-bgLight dark:bg-gray-900 transition-colors duration-300">
         
         <!-- HEADER -->
         <div class="bg-[#004267] dark:bg-gray-800 text-white pt-5 pb-6 px-6 rounded-b-[30px] shadow-lg z-30 flex-none relative transition-colors">
@@ -42,28 +42,29 @@
         </div>
 
         <!-- LISTE DES RECETTES -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-3">
-            <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1 mb-2 transition-colors">Base de données ({{ filteredRecipes.length }} résultats)</h3>
-            
-            <div v-for="recipe in filteredRecipes" :key="recipe.id" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center group transition-colors">
-                <div class="flex-1">
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white transition-colors">{{ recipe.name }}</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 transition-colors">{{ recipe.type }}</p>
-                    <div class="flex gap-1.5 mt-2">
-                        <span v-if="recipe.is_vegetarian" class="text-[9px] bg-green-50 dark:bg-green-900/30 text-[#16a34a] dark:text-green-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Végé</span>
-                        <span v-if="recipe.is_pork_free && !recipe.is_vegetarian" class="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Sans frigo</span>
-                        <span v-if="recipe.is_eco" class="text-[9px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Éco</span>
+        <div class="flex-1 overflow-y-auto p-4">
+                    <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1 mb-4 transition-colors">Base de données ({{ filteredRecipes.length }} résultats)</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div v-for="recipe in filteredRecipes" :key="recipe.id" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center group transition-colors hover:shadow-md hover:border-purple-200 dark:hover:border-purple-800">
+                            <div class="flex-1">
+                                <h4 class="text-sm font-bold text-gray-900 dark:text-white transition-colors">{{ recipe.name }}</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 transition-colors">{{ recipe.type }}</p>
+                                <div class="flex gap-1.5 mt-2">
+                                    <span v-if="recipe.is_vegetarian" class="text-[9px] bg-green-50 dark:bg-green-900/30 text-[#16a34a] dark:text-green-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Végé</span>
+                                    <span v-if="recipe.is_pork_free && !recipe.is_vegetarian" class="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Sans frigo</span>
+                                    <span v-if="recipe.is_eco" class="text-[9px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide transition-colors">Éco</span>
+                                </div>
+                            </div>
+                            <button @click="ajouterRecetteAuMenu(recipe)" class="w-8 h-8 rounded-full bg-violet-50 dark:bg-purple-900/30 text-[#5b2b82] dark:text-purple-400 flex items-center justify-center hover:bg-[#5b2b82] dark:hover:bg-purple-600 hover:text-white dark:hover:text-white transition-colors shrink-0 ml-2">
+                            <span class="font-bold text-xl leading-none mb-1">+</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div v-if="filteredRecipes.length === 0" class="text-center p-8 text-gray-400 dark:text-gray-500 text-sm transition-colors mt-4">
+                    Aucune recette ne correspond à ta recherche.
                     </div>
                 </div>
-                <button @click="ajouterRecetteAuMenu(recipe)" class="w-8 h-8 rounded-full bg-violet-50 dark:bg-purple-900/30 text-[#5b2b82] dark:text-purple-400 flex items-center justify-center hover:bg-[#5b2b82] dark:hover:bg-purple-600 hover:text-white dark:hover:text-white transition-colors">
-                  <span class="font-bold text-xl leading-none mb-1">+</span>
-                </button>
-            </div>
-            
-            <div v-if="filteredRecipes.length === 0" class="text-center p-8 text-gray-400 dark:text-gray-500 text-sm transition-colors">
-              Aucune recette ne correspond à ta recherche.
-            </div>
-        </div>
     </div>
 </template>
 

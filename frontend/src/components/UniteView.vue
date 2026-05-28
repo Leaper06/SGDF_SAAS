@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900 pb-20 relative transition-colors duration-300">
+    <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300">
         
         <!-- HEADER UNITÉ -->
         <div class="bg-[#004267] dark:bg-gray-800 text-white pt-5 pb-6 px-6 rounded-b-[30px] shadow-lg z-30 flex-none relative shrink-0 transition-colors">
@@ -48,7 +48,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                     {{ unitName }} ({{ jeunes.length }})
                 </h3>
-                <div class="grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <div v-for="membre in jeunes" :key="membre.id" @click="ouvrirFiche(membre)" :class="['bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 cursor-pointer transition-colors', branchStyles.borderHover]">                        
                         <div class="w-12 h-12 rounded-full overflow-hidden bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-800 shadow-sm transition-colors">
                             <img v-if="membre.photo" :src="membre.photo" class="w-full h-full object-cover">
@@ -73,7 +73,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
                     La Maîtrise ({{ chefs.length }})
                 </h3>
-                <div class="grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-for="membre in chefs" :key="membre.id" @click="ouvrirFiche(membre)" class="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 cursor-pointer hover:border-violet-200 dark:hover:border-purple-500/50 transition-colors">
                         <div class="w-12 h-12 rounded-full overflow-hidden bg-violet-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0 border-2 border-white dark:border-gray-800 shadow-sm transition-colors">
                             <img v-if="membre.photo" :src="membre.photo" class="w-full h-full object-cover">
@@ -90,17 +90,14 @@
 
         </div>
 
-        <!-- ======================================= -->
-        <!-- MODALE : FICHE D'UN MEMBRE              -->
-        <!-- ======================================= -->
-        <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-full">
-            <div v-if="selectedMember" class="fixed inset-0 z-50 flex flex-col justify-end">
+        <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95" enter-to-class="opacity-100 translate-y-0 md:scale-100" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0 md:scale-100" leave-to-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95">
+            
+            <div v-if="selectedMember" class="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center md:p-6">
                 <div class="absolute inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm transition-opacity" @click="fermerFiche"></div>
                 
-                <div class="relative bg-white dark:bg-gray-800 w-full rounded-t-3xl shadow-2xl flex flex-col z-10 overflow-hidden pb-8 transition-colors">
+                <div class="relative bg-white dark:bg-gray-800 w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col z-10 overflow-hidden pb-8 md:pb-0 transition-colors max-h-[90vh]">
                     
-                    <!-- BANDEAU HAUT MODALE -->
-                    <div :class="['h-24 w-full relative transition-colors', selectedMember.isJeune ? branchStyles.bg : 'bg-[#5b2b82] dark:bg-purple-900/60']">
+                    <div :class="['h-24 w-full relative shrink-0 transition-colors', selectedMember.isJeune ? branchStyles.bg : 'bg-[#5b2b82] dark:bg-purple-900/60']">
                         <div class="absolute -bottom-10 left-6 w-24 h-24 rounded-full overflow-hidden bg-white dark:bg-gray-800 border-4 border-white dark:border-gray-800 shadow-lg flex items-center justify-center cursor-pointer transition-colors" @click="$refs.photoInput.click()">
                             <img v-if="selectedMember.photo" :src="selectedMember.photo" class="w-full h-full object-cover">
                             <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-[50%] w-[50%] opacity-50 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
@@ -112,8 +109,7 @@
                         </button>
                     </div>
 
-                    <div class="px-6 pt-14 space-y-6">
-                        <!-- IDENTITÉ -->
+                    <div class="px-6 pt-14 pb-6 space-y-6 flex-1 overflow-y-auto scrollbar-hide">
                         <div>
                             <h2 class="text-2xl font-black text-gray-900 dark:text-white transition-colors">{{ selectedMember.prenom }} <span class="uppercase">{{ selectedMember.nom }}</span></h2>
                             <p class="text-sm font-bold text-gray-400 dark:text-gray-500 mt-0.5 transition-colors">N° {{ selectedMember.id }}</p>
@@ -121,7 +117,6 @@
 
                         <div class="space-y-3">
                             
-                            <!-- DOCUMENTS -->
                             <div class="space-y-3">
                                 <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">Documents</h3>
                                 
@@ -153,7 +148,6 @@
                                 
                             <input type="file" accept="image/png, image/jpeg, application/pdf" ref="ficheInput" @change="handleFicheUpload" class="hidden">
                             
-                            <!-- PROGRESSION PERSONNELLE (UNIQUEMENT POUR LES JEUNES) -->
                             <div v-if="selectedMember.isJeune" class="space-y-3 pt-3">
                                 <div class="flex justify-between items-center">
                                     <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">Progression Personnelle</h3>

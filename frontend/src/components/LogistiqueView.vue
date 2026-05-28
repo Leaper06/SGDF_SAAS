@@ -62,8 +62,8 @@
                     <p class="text-gray-500 dark:text-gray-400 font-medium transition-colors">Tout le matériel est en parfait état !</p>
                 </div>
 
-                <div v-else class="space-y-4">
-                    <div v-for="tente in damagedTents" :key="tente.id" class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-red-100 dark:border-red-900/50 shadow-sm relative overflow-hidden transition-colors">
+               <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div v-for="tente in damagedTents" :key="tente.id" class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-red-100 dark:border-red-900/50 shadow-sm relative overflow-hidden transition-colors flex flex-col justify-between">
                         <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 dark:bg-red-600"></div>
                         
                         <div class="flex justify-between items-start mb-3 pl-2">
@@ -121,12 +121,12 @@
                             Vous n'avez pas encore enregistré de lieu.
                         </div>
 
-                        <div class="space-y-4">
+                       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div 
                                 v-for="lieu in mesLieux" 
                                 :key="lieu.id" 
                                 @click="ouvrirDetailsLieu(lieu)"
-                                class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600 transition-all active:scale-[0.98]"
+                                class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-500 transition-all active:scale-[0.98]"
                             >
                                 <div class="pr-4">
                                     <h3 class="text-2xl font-black text-gray-900 dark:text-white leading-tight transition-colors">{{ lieu.name }}</h3>
@@ -155,12 +155,12 @@
                             Réseau partagé
                         </h4>
                         
-                        <div class="space-y-4">
+                       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div 
                                 v-for="lieu in lieuxPartages" 
                                 :key="lieu.id" 
                                 @click="ouvrirDetailsLieu(lieu)"
-                                class="bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/30 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800/50 transition-all active:scale-[0.98]"
+                                class="bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/30 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all active:scale-[0.98]"
                             >
                                 <div class="pr-4">
                                     <h3 class="text-2xl font-black text-[#004267] dark:text-blue-300 leading-tight transition-colors">{{ lieu.name }}</h3>
@@ -315,6 +315,7 @@
         
         <!-- BOUTON FLOTTANT AJOUTER LIEU -->
         <button 
+            v-if="activeTab === 'lieux'"
             @click="ouvrirAjoutLieu"
             class="absolute bottom-28 right-6 w-14 h-14 bg-[#004267] dark:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-all z-40"
         >
