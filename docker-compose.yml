@@ -1,0 +1,31 @@
+services:
+  # 1. Le Backend (Ton API Python/Flask)
+  api:
+    build: 
+      context: ./backend
+    container_name: polymaitrise_api
+    ports:
+      - "5000:5000" # Expose le port 5000 de ton PC
+    env_file:
+      - .env        # Injecte automatiquement tes clés Supabase
+    restart: unless-stopped # Le serveur redémarre tout seul si le PC redémarre
+    networks:
+      - scout-network
+
+  # 2. Le Frontend (Ton interface Vue.js servie par Nginx)
+  frontend:
+    build: 
+      context: ./frontend
+    container_name: polymaitrise_frontend
+    ports:
+      - "80:80"     # Le port web standard (HTTP)
+    depends_on:
+      - api         # On s'assure que l'API démarre en premier
+    restart: unless-stopped
+    networks:
+      - scout-network
+
+# On crée un petit réseau virtuel fermé pour que les conteneurs communiquent entre eux
+networks:
+  scout-network:
+    driver: bridge

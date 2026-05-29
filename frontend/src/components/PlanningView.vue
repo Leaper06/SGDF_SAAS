@@ -319,7 +319,7 @@
       </div>
       
     <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95" enter-to-class="opacity-100 translate-y-0 md:scale-100" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0 md:scale-100" leave-to-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95">
-        <div v-if="showTentsModal" class="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center md:p-6">
+        <div v-if="showTentsModal" class="fixed inset-0 pb-20 z-50 flex flex-col justify-end md:justify-center md:items-center md:p-6">
             <div class="absolute inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm transition-opacity" @click="showTentsModal = false"></div>
             
             <div class="relative bg-white dark:bg-gray-800 w-full md:max-w-2xl h-[85vh] md:max-h-[85vh] md:h-auto rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col z-10 overflow-hidden transition-colors">
