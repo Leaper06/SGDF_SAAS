@@ -12,6 +12,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install gunicorn
 
+# Installation optimisée de Playwright (Chromium uniquement + nettoyage)
+RUN playwright install chromium && \
+    playwright install-deps chromium && \
+    rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
+
+
 # 5. On copie tout le reste de ton code 
 # (main.py, tes modules de gestion des lieux, des tentes, etc.)
 COPY . .
@@ -20,5 +26,4 @@ COPY . .
 EXPOSE 5000
 
 # 7. La commande pour lancer le serveur via Gunicorn
-# "main:app" signifie : "Dans le fichier main.py, utilise la variable 'app' (qui contient Flask)"
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["gunicorn", "--chdir", "app", "-w", "1", "--threads", "4", "-b", "0.0.0.0:5000", "main:app"]
