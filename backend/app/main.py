@@ -54,7 +54,7 @@ def upload_file():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     
-    file_url = f"http://localhost:5000/uploads/{filename}"
+    file_url = f"/uploads/{filename}"
     return jsonify({"status": "success", "url": file_url}), 200
 
 @app.route('/uploads/<filename>')
