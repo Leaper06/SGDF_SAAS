@@ -41,9 +41,13 @@
         <span class="text-[10px] md:text-xs font-medium mt-1 md:mt-2">Profil</span>
       </router-link>
 
+      <!-- Mentions légales : Discret et uniquement sur Desktop -->
+      <router-link to="/mentions-legales" class="hidden md:block text-[11px] text-gray-300 dark:text-gray-700 hover:text-gray-500 dark:hover:text-gray-500 transition-colors text-center mt-2 leading-tight">
+        Mentions<br>Légales
+      </router-link>
+
     </nav>
 </template>
 
 <script setup>
-
 </script>

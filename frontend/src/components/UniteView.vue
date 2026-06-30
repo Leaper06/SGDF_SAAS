@@ -98,7 +98,7 @@
                 <div class="relative bg-white dark:bg-gray-800 w-full md:max-w-2xl rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col z-10 overflow-hidden pb-8 md:pb-0 transition-colors max-h-[90vh]">
                     
                     <div :class="['h-24 w-full relative shrink-0 transition-colors', selectedMember.isJeune ? branchStyles.bg : 'bg-[#5b2b82] dark:bg-purple-900/60']">
-                        <div class="absolute -bottom-10 left-6 w-24 h-24 rounded-full overflow-hidden bg-white dark:bg-gray-800 border-4 border-white dark:border-gray-800 shadow-lg flex items-center justify-center cursor-pointer transition-colors" @click="$refs.photoInput.click()">
+                        <div class="absolute -bottom-10 left-6 w-24 h-24 rounded-full overflow-hidden bg-white dark:bg-gray-800 border-4 border-white dark:border-gray-800 shadow-lg flex items-center justify-center cursor-pointer transition-colors" @click="triggerPhoto">
                             <img v-if="selectedMember.photo" :src="selectedMember.photo" class="w-full h-full object-cover">
                             <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-[50%] w-[50%] opacity-50 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
@@ -135,51 +135,45 @@
                                         </div>
                                     </div>
                                     
+                                    <div :class="['p-3 rounded-xl border flex items-start gap-3 transition-colors', branchStyles.lightBg, branchStyles.lightBorder]">
+                                        <input 
+                                            v-model="rgpdAccepte" 
+                                            type="checkbox" 
+                                            id="rgpd-consent"
+                                            class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#004267] dark:text-blue-500 focus:ring-[#004267]/20 dark:focus:ring-blue-500/30 transition-colors cursor-pointer"
+                                        >
+                                        <label for="rgpd-consent" class="text-[11px] font-semibold text-gray-600 dark:text-gray-400 leading-tight cursor-pointer select-none">
+                                            Je confirme avoir l'autorité parentale et j'accepte que les données de santé de cet enfant soient traitées pour le camp, conformément aux <router-link to="/mentions-legales" class="underline font-bold" :class="branchStyles.text">Mentions Légales</router-link>.
+                                        </label>
+                                    </div>
+
                                     <div class="flex gap-2">
                                         <button v-if="selectedMember.ficheUrl" @click="consulterFiche" class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm">
                                             Consulter
                                         </button>
-                                        <button @click="$refs.ficheInput.click()" :class="['flex-1 text-xs font-bold py-2.5 rounded-lg transition-colors shadow-sm', selectedMember.ficheUrl ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' : 'bg-[#004267] dark:bg-blue-600 text-white hover:bg-blue-900 dark:hover:bg-blue-700']">
-                                            {{ selectedMember.ficheUrl ? 'Remplacer' : 'Importer (PDF / IMG)' }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                                
-                            <input type="file" accept="image/png, image/jpeg, application/pdf" ref="ficheInput" @change="handleFicheUpload" class="hidden">
-                            
-                            <div v-if="selectedMember.isJeune" class="space-y-3 pt-3">
-                                <div class="flex justify-between items-center">
-                                    <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">Progression Personnelle</h3>
-                                    <button @click="sauvegarderProgression" :class="['text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm', branchStyles.btn]">
-                                        {{ isSavingProgression ? 'Enregistrement...' : 'Enregistrer' }}
+                                        
+                                        <!-- Le bouton d'import est désactivé (disabled) tant que la case n'est pas cochée -->
+                                        <button 
+                                        @click="triggerFiche" 
+                                        :disabled="!rgpdAccepte"
+                                        :class="[
+                                            'flex-1 text-xs font-bold py-2.5 rounded-lg transition-colors shadow-sm', 
+                                            !rgpdAccepte ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 
+                                            (selectedMember.ficheUrl ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' : 'bg-[#004267] dark:bg-blue-600 text-white hover:bg-blue-900 dark:hover:bg-blue-700')
+                                        ]"
+                                    >
+                                        {{ selectedMember.ficheUrl ? 'Remplacer' : 'Importer (PDF / IMG)' }}
                                     </button>
-                                </div>
-                                
-                                <div :class="['border rounded-xl p-4 space-y-3 transition-colors', branchStyles.lightBg, branchStyles.lightBorder]">
-                                    <div>
-                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1 transition-colors', branchStyles.text]">Étape / Insigne (Atout, Cap...)</label>
-                                        <input 
-                                            v-model="selectedMember.progressionSymbole" 
-                                            type="text" 
-                                            placeholder="Ex: Atout de la Rencontre" 
-                                            :class="['w-full bg-white dark:bg-gray-900 border text-gray-900 dark:text-white font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600', branchStyles.lightBorder, branchStyles.focusBorder]"
-                                        >
-                                    </div>
-                                    <div>
-                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1 transition-colors', branchStyles.text]">Défi / Action à réaliser</label>
-                                        <textarea 
-                                            v-model="selectedMember.progressionAction" 
-                                            rows="2" 
-                                            placeholder="Ex: Organiser un grand jeu..." 
-                                            :class="['w-full bg-white dark:bg-gray-900 border text-gray-900 dark:text-white font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors resize-none placeholder-gray-400 dark:placeholder-gray-600', branchStyles.lightBorder, branchStyles.focusBorder]"
-                                        ></textarea>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- LES DEUX INPUTS CACHÉS DOIVENT ÊTRE ICI -->
+                            <input type="file" id="ficheInput" accept="image/png, image/jpeg, application/pdf" ref="ficheInput" @change="handleFicheUpload" class="hidden">
+                            <input type="file" id="photoInput" accept="image/*" ref="photoInput" @change="handlePhotoUpload" class="hidden">
+
                         </div>
                     </div>
-                    <input type="file" accept="image/*" ref="photoInput" @change="handlePhotoUpload" class="hidden">
                 </div>
             </div>
         </transition>
@@ -197,14 +191,27 @@ import { API_BASE_URL } from '../api/config.js'
 
 const selectedMember = ref(null)
 const photoInput = ref(null)
+const ficheInput = ref(null)
+
 
 const getInitials = (nom, prenom) => {
     return (prenom?.charAt(0) || '') + (nom?.charAt(0) || '')
 }
 
-const ouvrirFiche = (membre) => { selectedMember.value = membre }
-const fermerFiche = () => { selectedMember.value = null }
+const triggerFiche = () => {
+    if (ficheInput.value) ficheInput.value.click()
+}
 
+const triggerPhoto = () => {
+    if (photoInput.value) photoInput.value.click()
+}
+
+const ouvrirFiche = (membre) => { 
+    selectedMember.value = membre 
+    rgpdAccepte.value = membre.ficheUrl ? true : false
+}
+const fermerFiche = () => { selectedMember.value = null }
+const rgpdAccepte = ref(false)
 // On lance le chargement à l'ouverture de la page
 onMounted(() => {
     fetchAdherents()

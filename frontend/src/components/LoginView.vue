@@ -25,7 +25,7 @@
                     
                     <div class="space-y-5">
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-colors">Identifiant / Structure</label>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-colors">Identifiant / Mail</label>
                             <input 
                                 v-model="username" 
                                 type="text" 
@@ -84,6 +84,14 @@
             </div>
         </div>
     </div>
+    <div class="absolute bottom-4 w-full text-center">
+  <router-link 
+    to="/mentions-legales" 
+    class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+  >
+    Mentions Légales & RGPD
+  </router-link>
+</div>
 </template>
 <script setup>
 import { ref } from 'vue'
