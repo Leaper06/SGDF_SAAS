@@ -231,7 +231,6 @@
 <script setup>
 import { onMounted } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
-// IMPORT AJOUTÉ ICI 👇
 import { fetchAdherents } from '../stores/adherentsStore.js'
 
 import { 

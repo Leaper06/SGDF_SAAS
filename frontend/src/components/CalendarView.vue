@@ -150,7 +150,7 @@
 <script setup>
 import { formatWeekday, formatDay } from '../utils/helpers.js'
 import { computed, onMounted } from 'vue'
-import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch } from '../stores/authStore.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, isDemoMode } from '../stores/authStore.js'
 import { 
   selectedCamp, campsList, loading, currentDate, showCampMenu,
   showAddModal, newEvent, showEditCampModal, editCampForm,

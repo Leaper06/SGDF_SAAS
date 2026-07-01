@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import router from '../router.js'
 import { API_BASE_URL } from '../api/config.js'
 import { selectedCamp, joursDuCamp } from './campsStore.js'
-import { userToken } from './authStore.js'
+import { userToken, isDemoMode } from './authStore.js'
 import { chefs } from './adherentsStore.js'
 
 // ==========================================
@@ -63,6 +63,21 @@ export const ouvrirPlanning = async (camp) => {
 }
 
 export const fetchSlots = async (campId) => {
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    const baseDate = new Date(selectedCamp.value?.start_date || new Date())
+    const start1 = new Date(baseDate); start1.setHours(14, 30, 0)
+    const end1 = new Date(baseDate); end1.setHours(17, 0, 0)
+    const start2 = new Date(baseDate); start2.setHours(19, 0, 0)
+    const end2 = new Date(baseDate); end2.setHours(20, 30, 0)
+    
+    slotsList.value = [
+      { id: 'demo-slot-1', title: 'Grand Jeu d\'approche', slot_type: 'jeu', start_time: start1.toISOString(), end_time: end1.toISOString() },
+      { id: 'demo-slot-2', title: 'Banquet & Concours cuisine', slot_type: 'repas', start_time: start2.toISOString(), end_time: end2.toISOString() }
+    ]
+    return
+  }
+  // =============================
   try {
     const response = await fetch(`${API_BASE_URL}/camps/${campId}/slots`)
     const json = await response.json()
@@ -81,6 +96,25 @@ export const fermerSlotModal = () => showAddSlotModal.value = false
 
 export const soumettreSlot = async () => {
   if (!newSlot.value.title || !newSlot.value.start_hour || !newSlot.value.end_hour) return alert("Remplir titre et horaires.");
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    const baseDate = new Date(newSlot.value.selected_day)
+    const [startH, startM] = newSlot.value.start_hour.split(':')
+    const [endH, endM] = newSlot.value.end_hour.split(':')
+    const startDateTime = new Date(baseDate); startDateTime.setHours(parseInt(startH), parseInt(startM), 0)
+    const endDateTime = new Date(baseDate); endDateTime.setHours(parseInt(endH), parseInt(endM), 0)
+    
+    slotsList.value.push({
+      id: 'demo-new-slot-' + Date.now(),
+      title: newSlot.value.title,
+      slot_type: newSlot.value.slot_type,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString()
+    })
+    fermerSlotModal()
+    return
+  }
+  // =============================
   try {
     const baseDate = new Date(newSlot.value.selected_day)
     const [startH, startM] = newSlot.value.start_hour.split(':')
@@ -120,6 +154,25 @@ export const fermerEditSlotModal = () => showEditSlotModal.value = false
 
 export const soumettreModificationSlot = async () => {
   if (!editSlot.value.title || !editSlot.value.start_hour || !editSlot.value.end_hour) return alert("Remplir le titre et horaires.")
+    // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    const index = slotsList.value.findIndex(s => s.id === slotToEditId.value)
+    if (index !== -1) {
+      const baseDate = new Date(editSlot.value.selected_day)
+      const [startH, startM] = editSlot.value.start_hour.split(':')
+      const [endH, endM] = editSlot.value.end_hour.split(':')
+      const startDateTime = new Date(baseDate); startDateTime.setHours(parseInt(startH), parseInt(startM), 0)
+      const endDateTime = new Date(baseDate); endDateTime.setHours(parseInt(endH), parseInt(endM), 0)
+      
+      slotsList.value[index].title = editSlot.value.title
+      slotsList.value[index].slot_type = editSlot.value.slot_type
+      slotsList.value[index].start_time = startDateTime.toISOString()
+      slotsList.value[index].end_time = endDateTime.toISOString()
+    }
+    fermerEditSlotModal()
+    return
+  }
+  // =============================
   try {
     const baseDate = new Date(editSlot.value.selected_day)
     const [startH, startM] = editSlot.value.start_hour.split(':')
@@ -137,6 +190,12 @@ export const soumettreModificationSlot = async () => {
 
 export const supprimerSlot = async (slotId) => {
   if(confirm("Retirer cette activité du planning ?")) {
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+      slotsList.value = slotsList.value.filter(s => s.id !== slotId)
+      return
+    }
+    // =============================
     try {
       const response = await fetch(`${API_BASE_URL}/planning_slots/${slotId}`, { method: 'DELETE' })
       const json = await response.json()

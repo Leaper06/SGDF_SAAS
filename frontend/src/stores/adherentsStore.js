@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { API_BASE_URL } from '../api/config.js'
-import { userToken, logout, unitName, chefAdherentId, chefBranch } from './authStore.js'
+import { userToken, logout, unitName, chefAdherentId, chefBranch, isDemoMode } from './authStore.js'
 import { separerNomPrenom } from '../utils/helpers.js'
 
 // --- VARIABLES (Mémoire) ---
@@ -11,7 +11,7 @@ export const isLoadingAdherents = ref(false)
 export const jeunes = computed(() => {
     return adherentsList.value
         .filter(m => m.isJeune)
-        .sort((a, b) => a.nom.localeCompare(b.nom)); // Petit bonus pour les trier par ordre alphabétique
+        .sort((a, b) => a.nom.localeCompare(b.nom)); 
 })
 
 export const chefs = computed(() => {
@@ -25,6 +25,26 @@ export const fetchAdherents = async () => {
     if (adherentsList.value.length > 0) return 
 
     isLoadingAdherents.value = true
+
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        setTimeout(() => {
+            adherentsList.value = [
+                // Faux profils de la maîtrise
+                { id: 'demo-chef-loic', nom: 'Test', prenom: 'Utilisateur', code: '222', isJeune: false, isChef: true, photo: null, ficheUrl: 'demo_medical_file.pdf', hasFiche: true, progressionSymbole: '', progressionAction: '' },
+                { id: 'demo-chef-2', nom: 'DUPONT', prenom: 'Robert', code: '222', isJeune: false, isChef: true, photo: null, ficheUrl: null, hasFiche: false, progressionSymbole: '', progressionAction: '' },
+                
+                // Faux profils des jeunes (Jeunes avec des codes de Mousses 122)
+                { id: 'demo-jeune-1', nom: 'BAILLY', prenom: 'Julien', code: '122', isJeune: true, isChef: false, photo: null, ficheUrl: 'demo.pdf', hasFiche: true, progressionSymbole: 'Brevet Équipage', progressionAction: 'Gérer la table à carte' },
+                { id: 'demo-jeune-2', nom: 'Treard', prenom: 'Morgane', code: '122', isJeune: true, isChef: false, photo: null, ficheUrl: null, hasFiche: false, progressionSymbole: '', progressionAction: '' },
+                { id: 'demo-jeune-3', nom: 'Dupuis', prenom: 'THéo', code: '122', isJeune: true, isChef: false, photo: null, ficheUrl: null, hasFiche: false, progressionSymbole: '', progressionAction: '' },
+            ]
+            isLoadingAdherents.value = false
+        }, 600) // Petit délai pour l'animation du spinner
+        return
+    }
+    // =============================
+
     try {
         const [intranextResponse, extrasResponse] = await Promise.all([
             fetch(`${API_BASE_URL}/adherents`, {
@@ -41,11 +61,9 @@ export const fetchAdherents = async () => {
         const json = await intranextResponse.json()
         const extrasJson = await extrasResponse.json()
         
-        // Les extras viennent de Supabase, on récupère le dictionnaire
         const extraData = extrasJson.status === 'success' ? extrasJson.data : {}
         
         if (intranextResponse.ok && json.data) {
-            // 1. Profil de l'unité
             unitName.value = json.unit_name || "Unité Inconnue"
             localStorage.setItem('sgdf_unit_name', unitName.value)
             
@@ -54,25 +72,21 @@ export const fetchAdherents = async () => {
                 localStorage.setItem('sgdf_chef_id', json.adherent_id)
             }
 
-            // 2. Traitement du tableau HTML : on enlève la première ligne (les en-têtes)
             const rows = json.data.slice(1) 
 
             adherentsList.value = rows.map((row, index) => {
-                // row est une liste de colonnes envoyée par Python
                 const cols = row.filter(c => c.trim() !== '')
                 const rowText = cols.join(" ")
                 
-                // Tes fameuses règles métier
                 const isJeune = /\b1\d{2}\b/.test(rowText)
                 const isChef = /\b2\d{2}\b/.test(rowText)
-                const identite = separerNomPrenom(cols[0]) // Le nom est dans la colonne 0
-                const numAdherent = cols[1] || `id-${index}` // L'ID est dans la colonne 1
+                const identite = separerNomPrenom(cols[0]) 
+                const numAdherent = cols[1] || `id-${index}` 
                 
                 const matchCode = rowText.match(/\b([12]\d{2})\b/)
                 const codeAffichage = matchCode ? matchCode[0] : "Code ???"
                 const localInfo = extraData[numAdherent] || {}
 
-                // On reconstruit l'objet propre pour Vue.js
                 return {
                     id: numAdherent,
                     nom: identite.nom,
@@ -90,7 +104,6 @@ export const fetchAdherents = async () => {
                 }
             })
 
-            // 3. Détection de la branche
             if (chefAdherentId.value) {
                 const idRecherche = String(chefAdherentId.value).trim()
                 const monProfil = adherentsList.value.find(m => String(m.id).trim() === idRecherche)

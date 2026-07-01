@@ -565,7 +565,7 @@ import {
   supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
   fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 
 } from '../stores/intendanceStore.js'
-import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, groupName } from '../stores/authStore.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, groupName, isDemoMode } from '../stores/authStore.js'
 import { getTheme, formatHeure, formatTypeLabel, formatCourt } from '../utils/helpers.js'
 import { ref, computed } from 'vue'
 import { adherentsList, isLoadingAdherents, jeunes, chefs, fetchAdherents } from '../stores/adherentsStore.js'
@@ -660,6 +660,7 @@ const toggleTent = (tentId) => {
 
 // La fonction pour sauvegarder la sélection en base de données
 const sauvegarderTentes = async () => {
+    if (isDemoMode.value) { showTentsModal.value = false; return }
     if (!selectedCamp.value) return
 
     try {
@@ -684,6 +685,18 @@ const sauvegarderTentes = async () => {
 
 // Fonction qui ouvre la modale ET charge les tentes cochées pour CE camp
 const ouvrirGestionTentes = async () => {
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        showTentsModal.value = true
+        allTents.value = [
+            { id: 1, name: 'Tente Patrouille Tigres', capacity: 8, status: 'disponible' },
+            { id: 2, name: 'Tente Patrouille Panthères', capacity: 8, status: 'abimee' },
+            { id: 3, name: 'Tente Maîtrise', capacity: 3, status: 'disponible' }
+        ]
+        selectedTents.value = [1]
+        return
+    }
+    // =============================
     showTentsModal.value = true
     await chargerTentes() // On charge tout le catalogue du groupe
     
@@ -722,6 +735,14 @@ const togglePresence = (adherentId) => {
 
 // Ouvrir la modale et charger les données
 const ouvrirGestionPresence = async () => {
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        showAttendanceModal.value = true
+        // On coche virtuellement Loïc et le jeune Matheo
+        selectedAdherents.value = ['demo-chef-loic', 'demo-jeune-1']
+        return
+    }
+    // =============================
     showAttendanceModal.value = true
     if (selectedCamp.value) {
         try {
@@ -740,6 +761,7 @@ const ouvrirGestionPresence = async () => {
 
 // Sauvegarder dans la DB
 const sauvegarderPresence = async () => {
+    if (isDemoMode.value) { showAttendanceModal.value = false; return }
     if (!selectedCamp.value) return
     try {
         const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/attendance`, {
@@ -783,7 +805,19 @@ const genererListeCourses = async () => {
     })
 
     console.log(`Génération pour : ${nbJeunesPresents} jeunes et ${nbAdultesPresents} adultes`)
-
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        setTimeout(() => {
+            shoppingList.value = [
+                { name: 'Pâtes', displayQty: 2, displayUnit: 'kg' }, 
+                { name: 'Sauce Tomate', displayQty: 3, displayUnit: 'bocaux' },
+                { name: 'Gruyère râpé', displayQty: 500, displayUnit: 'g' }
+            ]
+            isGeneratingList.value = false
+        }, 600)
+        return
+    }
+    // =============================
     // 2. On appelle Flask avec ces bons paramètres
     try {
         const url = `${API_BASE_URL}/camps/${selectedCamp.value.id}/shopping-list?jeunes=${nbJeunesPresents}&adultes=${nbAdultesPresents}`

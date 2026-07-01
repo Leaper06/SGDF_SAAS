@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { API_BASE_URL } from '../api/config.js'
-import { groupName } from './authStore.js'
+import { groupName, isDemoMode } from './authStore.js'
 // --- VARIABLES ---
 export const damagedTents = ref([])
 export const showIncidentModal = ref(false)
@@ -17,6 +17,19 @@ export const locations = ref([])
 export const showLocationModal = ref(false)
 
 export const fetchLocations = async () => {
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        locations.value = [
+            // Lieux Partagés (is_shared: true)
+            { id: 'demo-loc-1', name: 'Local Notre-Dame d\'Aleth', address: 'Place Saint-Pierre, 35400 Saint-Malo', contact_info: 'Clés dans la boîte à code.', description: 'Notre local habituel.', is_shared: true },
+            { id: 'demo-loc-2', name: 'Base Scoute de la Guiche', address: 'La Guiche, 35350 Saint-Méloir-des-Ondes', contact_info: 'Équipe régionale', description: 'Grand terrain, accès eau potable et électricité.', is_shared: true },
+            // Lieux Privés (is_shared: false)
+            { id: 'demo-loc-3', name: 'Terrain de M. Martin', address: 'La Ville ès Nonais, 35430', contact_info: 'M. Martin : 06 12 34 56 78', description: 'Champ plat sans point d\'eau, demander avant.', is_shared: false },
+            { id: 'demo-loc-4', name: 'Centre Nautique de Quelmer', address: 'Quelmer, 35400 Saint-Malo', contact_info: 'Accueil base nautique', description: 'Point de départ pour les activités en mer.', is_shared: false }
+        ]
+        return
+    }
+    // =============================
     try {
         // On récupère les lieux de notre groupe + les lieux partagés
         const response = await fetch(`${API_BASE_URL}/locations?group_name=${groupName.value}`)
@@ -31,6 +44,28 @@ export const ouvrirAjoutLieu = () => {
 }
 
 export const soumettreLieu = async () => {
+    if (!locationForm.value.name) return alert("Le nom est obligatoire")
+    
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+        isSavingLocation.value = true
+        setTimeout(() => {
+            locations.value.push({
+                id: 'demo-loc-new-' + Date.now(),
+                name: locationForm.value.name,
+                address: locationForm.value.address,
+                contact_info: locationForm.value.contact_info,
+                description: locationForm.value.description,
+                is_shared: locationForm.value.is_shared
+            })
+            showLocationModal.value = false
+            isSavingLocation.value = false
+        }, 500)
+        return
+    }
+    // =============================
+
+    isSavingLocation.value = true
     if (!locationForm.value.name) return alert("Le nom est obligatoire")
     
     isSavingLocation.value = true

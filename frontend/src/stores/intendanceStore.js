@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import router from '../router.js'
 import { API_BASE_URL } from '../api/config.js'
 import { selectedCamp } from './campsStore.js'
-import { userToken } from './authStore.js'
+import { userToken, isDemoMode } from './authStore.js'
 import { jeunes, chefs } from './adherentsStore.js'
 import { selectedSlot } from './planningStore.js'
 
@@ -47,10 +47,9 @@ export const groupedShoppingList = computed(() => {
     
     let finalQty = item.qty
     if (rabEnabled.value) finalQty = Math.ceil(finalQty * 1.1)
-    
-    let displayQty = finalQty
-    let displayUnit = item.unit
-    
+    let displayQty = finalQty || 0
+    let displayUnit = item.unit || '' 
+
     if (displayUnit.toLowerCase() === 'g' && finalQty >= 1000) {
       displayQty = (finalQty / 1000).toFixed(1).replace('.0', '')
       displayUnit = 'kg'
@@ -70,6 +69,15 @@ export const groupedShoppingList = computed(() => {
 // ACTIONS (Fonctions)
 // ==========================================
 export const chargerCatalogueRecettes = async () => {
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    recipesList.value = [
+      { id: 'demo-1', name: 'Pâtes Carbonara', type: 'Plat principal', is_vegetarian: false, is_fridge_free: false, is_wood_fire: true },
+      { id: 'demo-2', name: 'Salade de riz', type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false }
+    ]
+    return
+  }
+  // =============================
   try {
     const response = await fetch(`${API_BASE_URL}/recipes`)
     const json = await response.json()
@@ -94,15 +102,41 @@ export const partagerRecette = async () => {
 }
 
 export const ouvrirMenuRepas = async (slot) => {
-  selectedSlot.value = slot; router.push('/menu'); currentMealRecipes.value = []; currentMeal.value = null
+  selectedSlot.value = slot
+  currentMealRecipes.value = []
+  currentMeal.value = null
+  currentShoppingMealId.value = slot.id
+
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+      currentMealRecipes.value = [
+          { id: 'demo-recette-1', name: 'Salade composée', type: 'Entrée' },
+          { id: 'demo-recette-2', name: 'Pâtes Carbonara', type: 'Plat principal' },
+          { id: 'demo-recette-3', name: 'Bananes', type: 'Dessert' }
+      ]
+      router.push('/menu')
+      return 
+  }
+  // =============================
+
+  router.push('/menu')
   try {
     const response = await fetch(`${API_BASE_URL}/planning_slots/${slot.id}/meal`)
     const json = await response.json()
-    if (json.status === 'success') { currentMeal.value = json.data.meal; currentMealRecipes.value = json.data.recipes || [] }
+    if (json.status === 'success') { 
+        currentMeal.value = json.data.meal
+        currentMealRecipes.value = json.data.recipes || [] 
+    }
   } catch (error) { console.error("Erreur :", error) }
 }
 
 export const retirerRecette = async (index, recipe_id) => {
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    currentMealRecipes.value.splice(index, 1)
+    return
+  }
+  // =============================
   if (!currentMeal.value) return
   try {
     const response = await fetch(`${API_BASE_URL}/meals/${currentMeal.value.id}/recipes/${recipe_id}`, { method: 'DELETE' })
@@ -112,6 +146,13 @@ export const retirerRecette = async (index, recipe_id) => {
 }
 
 export const ajouterRecetteAuMenu = async (recipe) => {
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    currentMealRecipes.value.push(recipe)
+    router.push('/menu')
+    return
+  }
+  // =============================
   if (!currentMeal.value) return
   const dejaPresent = currentMealRecipes.value.some(r => r.id === recipe.id)
   if (dejaPresent) {
@@ -129,7 +170,20 @@ export const ajouterRecetteAuMenu = async (recipe) => {
 export const fermerMenuRepas = () => { selectedSlot.value = null; router.push('/planning') }
 
 export const genererBordereau = async () => {
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    shoppingList.value = [
+      { name: 'Pâtes', qty: 2, unit: 'kg', isChecked: false, category: 'Epicerie' }, 
+      { name: 'Lardons', qty: 500, unit: 'g', isChecked: false, category: 'Frais' },
+      { name: 'Bananes', qty: 15, unit: 'pièces', isChecked: false, category: 'Fruits' }
+    ]
+    showShoppingModal.value = true
+    return
+  }
+  // =============================
+
   if (!currentMeal.value) return
+  
   try {
     let nbJeunesPresents = 0, nbAdultesPresents = 0
     if (selectedCamp.value) {
@@ -153,9 +207,19 @@ export const genererBordereau = async () => {
     }
   } catch (error) { console.error("Erreur de génération :", error) }
 }
-
 export const genererBordereauGlobal = async () => {
     if (!selectedCamp.value) return
+    // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    shoppingList.value = [
+      { name: 'Pâtes', qty: 2, unit: 'kg', isChecked: false, category: 'Epicerie' }, 
+      { name: 'Lardons', qty: 500, unit: 'g', isChecked: false, category: 'Frais' },
+      { name: 'Bananes', qty: 15, unit: 'pièces', isChecked: false, category: 'Fruits' }
+    ]
+    showShoppingModal.value = true
+    return
+  }
+  // =============================
     try {
         let nbJeunesPresents = 0, nbAdultesPresents = 0
         const attRes = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/attendance`, { headers: { 'Authorization': `Bearer ${userToken.value}` } })

@@ -39,7 +39,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!userToken.value
 
-  if (to.name !== 'login' && !isAuthenticated) {
+if (to.name !== 'login' && to.name !== 'MentionsLegales' && !isAuthenticated) {
     next({ name: 'login' }) // Retour à la connexion
   } else if (to.name === 'login' && isAuthenticated) {
     next({ name: 'unite' }) // S'il est déjà connecté, on l'envoie sur l'accueil

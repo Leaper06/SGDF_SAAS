@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import router from '../router.js'
 import { API_BASE_URL } from '../api/config.js'
-import { userToken } from './authStore.js' // On a besoin du token pour appeler l'API !
+import { userToken, isDemoMode } from './authStore.js' 
 
 export const campsList = ref([])
 export const selectedCamp = ref(null)
@@ -108,6 +108,24 @@ export const fermerEditCampModal = () => showEditCampModal.value = false
 
 export const fetchCamps = async () => {
   if (!userToken.value) return
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    const today = new Date()
+    const saturday = new Date(today)
+    saturday.setDate(today.getDate() + (6 - today.getDay())) // Prochain Samedi
+    const sunday = new Date(saturday)
+    sunday.setDate(saturday.getDate() + 1) // Prochain Dimanche
+    
+    setTimeout(() => {
+      campsList.value = [
+        { id: 'demo-camp-1', name: 'Week-end de rentrée', location: 'Base de la Guiche', start_date: saturday.toISOString(), end_date: sunday.toISOString() },
+        { id: 'demo-camp-2', name: 'Réunion Maîtrise', location: 'Local', start_date: today.toISOString(), end_date: today.toISOString() }
+      ]
+      loading.value = false
+    }, 500)
+    return
+  }
+  // =============================
   try {
     const response = await fetch(`${API_BASE_URL}/camps`, {
       headers: { 'Authorization': `Bearer ${userToken.value}` }
@@ -120,6 +138,20 @@ export const fetchCamps = async () => {
 
 export const soumettreEvenement = async () => {
   if (!newEvent.value.name || !newEvent.value.startDate) { alert("Titre et date obligatoires !"); return; }
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    campsList.value.push({
+      id: 'demo-new-' + Date.now(), // Faux ID unique
+      name: newEvent.value.name,
+      location: newEvent.value.location,
+      start_date: newEvent.value.startDate,
+      end_date: newEvent.value.endDate || newEvent.value.startDate
+    })
+    fermerModal()
+    newEvent.value = { type: 'weekend', name: '', location: '', startDate: '', endDate: '' }
+    return
+  }
+  // =============================
   try {
     const response = await fetch(`${API_BASE_URL}/camps`, {
       method: 'POST', 
@@ -149,6 +181,16 @@ export const modifierCamp = () => {
 
 export const soumettreModificationCamp = async () => {
   if (!editCampForm.value.name || !editCampForm.value.startDate) return alert("Le nom et la date sont obligatoires.");
+  // === INTERCEPTION MODE DÉMO ===
+  if (isDemoMode.value) {
+    selectedCamp.value.name = editCampForm.value.name
+    selectedCamp.value.location = editCampForm.value.location
+    selectedCamp.value.start_date = editCampForm.value.startDate
+    selectedCamp.value.end_date = editCampForm.value.endDate
+    fermerEditCampModal()
+    return
+  }
+  // =============================
   try {
     const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editCampForm.value)
@@ -167,6 +209,14 @@ export const soumettreModificationCamp = async () => {
 
 export const supprimerCamp = async () => { 
   if(confirm("Supprimer tout ce week-end ?")) {
+    // === INTERCEPTION MODE DÉMO ===
+    if (isDemoMode.value) {
+      campsList.value = campsList.value.filter(c => c.id !== selectedCamp.value.id)
+      showCampMenu.value = false
+      router.push('/camps')
+      return
+    }
+    // =============================
     try {
       const response = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}`, { method: 'DELETE' })
       const json = await response.json()
