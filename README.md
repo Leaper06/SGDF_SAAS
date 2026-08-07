@@ -1,62 +1,82 @@
-# PolyMaîtrise (SGDF SaaS)
+# PolyMaîtrise (V2)
 
-PolyMaîtrise est un outil compagnon conçu pour faciliter l'organisation, la gestion logistique et le suivi pédagogique des activités et des camps scouts. 
+> **Le couteau suisse numérique des maîtrises Scouts et Guides de France.**  
+> Libérez du temps d'organisation et de logistique administrative pour maximiser le temps passé sur le terrain avec les jeunes.
 
-## Fonctionnalités principales
+---
 
-- **Gestion des adhérents :** Suivi des jeunes, contacts d'urgence et informations médicales basiques.
-- **Logistique & Matériel :** Suivi de l'état des tentes, répartition du matériel d'animation et de la flotte.
-- **Intendance :** Gestion des menus, des courses et des fiches d'intentions.
-- **Planning :** Organisation des grilles d'activités pour les week-ends et les camps d'été.
+## Fonctionnalités principales (V2)
+
+### Gestion des Week-ends & Modèles
+- **Planning interactif :** Grille d'activités découpée par créneaux (Veillées, Grands Jeux, Vie quotidienne, etc.).
+- **Modèles de week-ends :** Sauvegardez vos week-ends types en modèles (Globaux ou Personnalisés par unité) pour créer vos événements en 1 clic.
+- **Export PDF :** Génération et impression des plannings de camp au format PDF prêt à emporter en forêt.
+
+### Logistique & Matériel
+- **Parc de tentes :** État du stock de tentes en temps réel, affectation aux unités et suivi/signalement des réparations.
+- **Inventaire matériel :** Création de listes de matériel par week-end et modèles types (ex: Liste mathos week-end type).
+
+### Intendance & Repas
+- **Base de recettes :** Base de recettes adaptées aux camps avec calcul automatique des quantités (Jeunes vs Adultes).
+- **Bordereau de courses global :** Fusion automatique de toutes les recettes du week-end en un bordereau de courses unifié.
+
+### Administration & Présences
+- **Registre des présences :** Suivi dynamique des présents et absents à chaque activité du week-end.
+- **Suivi individuel :** Visualisation de la progression personnelle (Caps, Atouts) et statut des fiches sanitaires.
+- **Espace Profil :** Gestion de liens favoris personnalisés par chef.
+
+---
 
 ## Stack Technique
 
-L'architecture est séparée entre un frontend réactif et une API backend légère, le tout conteneurisé pour un déploiement fluide.
+- **Frontend :** Vue.js 3 (Vite, TailwindCSS, Pinia, Vue Router)
+- **Backend :** Python (Flask, Gunicorn WSGI)
+- **Base de données :** Supabase (PostgreSQL)
+- **Présentation :** Slidev (dans le dossier `idee/slidev`)
+- **Infrastructure :** Docker & Docker Compose, Nginx, Let's Encrypt
 
-*   **Frontend :** Vue.js (Vite)
-*   **Backend :** Python (Flask) / Serveur WSGI Gunicorn
-*   **Base de données :** Supabase (PostgreSQL)
-*   **Infrastructure & Déploiement :** Docker & Docker Compose
-*   **Proxy & Sécurité :** Nginx, Let's Encrypt (Certbot)
+---
 
 ## Installation en local (Développement)
 
 ### Prérequis
-- [Docker](https://docs.docker.com/get-docker/) et Docker Compose installés sur votre machine.
+- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 - [Git](https://git-scm.com/)
 
 ### Étapes d'installation
 
 1. **Cloner le dépôt :**
-```bash
-git clone https://github.com/Leaper06/SGDF_SAAS.git
-cd SGDF_SAAS
-```
-2. Configuration des variables d'environnement :
-Créez un fichier .env à la racine du projet en vous basant sur le modèle fourni :
-```bash
-cp .env.example .env
-```
-Renseignez ensuite vos clés d'API Supabase dans ce nouveau fichier .env.
-3. Lancer les conteneurs :
-```bash
-docker compose up -d --build
-```
-4. Accéder à l'application :
-   * Frontend : http://localhost:80
-   * API Backend : http://localhost:5000
-# Déploiement en production
-Le projet est configuré pour être déployé sur un VPS via Docker.
-Le routage et la terminaison SSL sont gérés par un conteneur Nginx avec Let's Encrypt.
-1. Récupérer le code sur le serveur.
-2. Configurer le fichier .env avec les identifiants de production.
-3. Générer le certificat SSL initial via Certbot en mode standalone (voir la documentation interne).
-4. Lancer le service : docker compose up -d --build
+   ```bash
+   git clone https://github.com/Leaper06/SGDF_SAAS.git
+   cd SGDF_SAAS
+   ```
 
-# Sécurité et RGPD
-Ce projet manipule des données concernant des mineurs.
-Les variables d'environnement (.env) et les fichiers de cache (__pycache__, node_modules) sont strictement ignorés par Git.
-Les mots de passe et accès base de données ne doivent jamais être commités.
-Les données en production sont protégées par un chiffrement SSL/TLS (HTTPS).
+2. **Configuration des variables d'environnement :**
+   Créez un fichier `.env` à la racine du projet à partir du modèle :
+   ```bash
+   cp .env.example .env
+   ```
+   Renseignez vos clés d'API Supabase dans le fichier `.env`.
 
-## Développé pour les maîtrises.
+3. **Lancer les conteneurs :**
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. **Accéder à l'application :**
+   - **Frontend :** `http://localhost:80` (ou `http://localhost:5173` en dev Vite)
+   - **API Backend :** `http://localhost:5000`
+   - **Présentation Slidev :** `http://localhost:3030` (via `cd idee/slidev && npm run dev`)
+
+---
+
+## Licence
+
+Ce projet est distribué sous **Licence PolyMaîtrise - Usage Non Commercial & Scoutisme** (voir le fichier [`LICENSE.md`](./LICENSE.md)).  
+Il est **gratuit et libre d'accès** pour les unités et maîtrises des **Scouts et Guides de France (SGDF)** et du Scoutisme Français pour un usage non commercial. Toute exploitation commerciale ou revente est interdite sans accord préalable.
+
+---
+
+<div align="center">
+  <sub>Développé pour les maîtrises scouts.</sub>
+</div>
