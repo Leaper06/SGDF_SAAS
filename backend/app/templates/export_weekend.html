@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dossier de Week-end - {{ camp.name }}</title>
+    <style>
+        :root {
+            --primary: #432C7A;
+            --primary-dark: #001D2D;
+            --scout-blue: #0076C8;
+            --scout-orange: #e85d22;
+            --scout-green: #10B981;
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-600: #475569;
+            --gray-900: #0F172A;
+        }
+
+        @page {
+            size: A4;
+            margin: 1.2cm;
+            @bottom-right {
+                content: "PolyMaîtrise • Page " counter(page) " / " counter(pages);
+                font-size: 8pt;
+                color: #94A3B8;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+        }
+        .page-break { page-break-before: always; }
+        .avoid-break { page-break-inside: avoid; }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            color: var(--gray-900); 
+            font-size: 10pt; 
+            line-height: 1.5;
+            background-color: #FFFFFF;
+        }
+
+        /* HERO / HEADER BANNER */
+        .hero {
+            background: linear-gradient(135deg, #001D2D 0%, #432C7A 100%);
+            color: #FFFFFF;
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+        }
+        .hero-badge {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #F1F5F9;
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+        .hero h1 {
+            font-size: 22pt;
+            font-weight: 800;
+            margin: 4px 0 10px 0;
+            line-height: 1.2;
+            color: #FFFFFF;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 9.5pt;
+            color: #CBD5E1;
+        }
+
+        /* SECTION HEADERS */
+        .section-title {
+            display: flex;
+            align-items: center;
+            font-size: 13pt;
+            font-weight: 800;
+            color: var(--primary-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-left: 4px solid var(--scout-orange);
+            padding-left: 10px;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        /* GRID / CARDS */
+        .grid-2 {
+            display: flex;
+            gap: 16px;
+        }
+        .col { flex: 1; }
+
+        .card {
+            background-color: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            font-size: 10.5pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--gray-200);
+        }
+        th {
+            background-color: var(--primary-dark);
+            color: #FFFFFF;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+            letter-spacing: 0.5px;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        td {
+            padding: 9px 12px;
+            border-top: 1px solid var(--gray-200);
+            font-size: 9.5pt;
+            background-color: #FFFFFF;
+        }
+        tr:nth-child(even) td {
+            background-color: var(--gray-50);
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            font-size: 8pt;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-orange { background-color: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; }
+        .badge-blue { background-color: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE; }
+        .badge-cyan { background-color: #ECFEFF; color: #0E7490; border: 1px solid #CFFAFE; }
+        .badge-slate { background-color: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; }
+        .badge-red { background-color: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+        /* TIMELINE ETAPES */
+        .timeline {
+            margin-top: 10px;
+            padding-left: 14px;
+            border-left: 2px solid var(--gray-200);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -19px;
+            top: 6px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--scout-orange);
+        }
+
+        /* INTENDANCE / REPAS TABLES */
+        .menu-table th.menu-header {
+            background-color: var(--scout-orange);
+            color: #FFFFFF;
+            font-size: 10pt;
+            font-weight: 800;
+            text-align: center;
+        }
+        .menu-table th.sub-header {
+            background-color: var(--gray-100);
+            color: var(--primary-dark);
+            font-size: 8.5pt;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO / BANNIÈRE D'ACCUEIL -->
+    <div class="hero avoid-break">
+        <div class="hero-badge">PolyMaîtrise • Dossier de Week-end</div>
+        <h1>{{ camp.name }}</h1>
+        <div class="hero-meta">
+            <span>📍 {{ lieu.name | default('Lieu non défini') }}</span>
+            <span>👥 {{ effectifs.total }} Participants ({{ effectifs.jeunes|length }} Jeunes • {{ effectifs.chefs|length }} Chefs)</span>
+        </div>
+    </div>
+
+    <!-- 1. INFORMATIONS PRATIQUES & RECAPITULATIF -->
+    <div class="grid-2 avoid-break" style="margin-bottom: 20px;">
+        <div class="card col">
+            <div class="card-header">
+                <span>📍 Lieu du week-end</span>
+            </div>
+            <strong style="font-size: 11pt; color: var(--primary-dark);">{{ lieu.name | default('Non défini') }}</strong><br>
+            <span style="color: var(--gray-600); font-size: 9.5pt;">{{ lieu.address | default('Adresse non renseignée') }}</span>
+            {% if lieu.description %}
+            <p style="margin-top: 8px; font-size: 9pt; color: var(--gray-600);">{{ lieu.description }}</p>
+            {% endif %}
+        </div>
+
+        <div class="card col">
+            <div class="card-header">
+                <span>🏕️ Logistique Tentes</span>
+            </div>
+            <strong style="font-size: 11pt; color: var(--primary-dark);">{{ tentes|length }} tente(s) réservée(s)</strong><br>
+            <span style="color: var(--gray-600); font-size: 9.5pt;">
+                Capacité totale : 
+                {% set capacity = namespace(total=0) %}
+                {% for t in tentes %}{% set capacity.total = capacity.total + (t.capacity | default(0)) %}{% endfor %}
+                {{ capacity.total }} places
+            </span>
+        </div>
+    </div>
+
+    <!-- 2. REGISTRE DE PRÉSENCE -->
+    <div class="avoid-break" style="margin-bottom: 24px;">
+        <h2 class="section-title">👥 Registre de Présence ({{ effectifs.total }})</h2>
+        
+        <div class="grid-2">
+            <div class="col">
+                <div style="font-weight: 700; font-size: 10pt; color: var(--primary); margin-bottom: 8px;">
+                    La Maîtrise ({{ effectifs.chefs|length }})
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Nom & Prénom</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for chef in effectifs.chefs %}
+                        <tr><td><strong>{{ chef.first_name }} {{ chef.last_name }}</strong></td></tr>
+                        {% else %}
+                        <tr><td style="color: var(--gray-600); font-style: italic;">Aucun chef enregistré</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col">
+                <div style="font-weight: 700; font-size: 10pt; color: var(--primary); margin-bottom: 8px;">
+                    Les Jeunes ({{ effectifs.jeunes|length }})
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Nom & Prénom</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for jeune in effectifs.jeunes %}
+                        <tr>
+                            <td>
+                                <strong>{{ jeune.first_name }} {{ jeune.last_name }}</strong>
+                                {% if not jeune.fiche_sanitaire_ajour %}
+                                <span class="badge badge-red" style="float: right;">FSA !</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td style="color: var(--gray-600); font-style: italic;">Aucun jeune enregistré</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. PLANNING GLOBAL -->
+    <div class="page-break">
+        <h2 class="section-title">📅 Planning Global du Week-end</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Jour</th>
+                    <th style="width: 18%;">Horaire</th>
+                    <th style="width: 32%;">Activité</th>
+                    <th style="width: 15%;">Type</th>
+                    <th style="width: 20%;">Responsable(s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in planning %}
+                <tr class="avoid-break">
+                    <td><strong>{{ slot.jour }}</strong></td>
+                    <td style="color: var(--gray-600);">{{ slot.heure_debut }} - {{ slot.heure_fin }}</td>
+                    <td><strong style="color: var(--primary-dark);">{{ slot.titre }}</strong></td>
+                    <td>
+                        {% if slot.type == 'jeu' %}
+                            <span class="badge badge-orange">Jeu / Anim</span>
+                        {% elif slot.type == 'repas' %}
+                            <span class="badge badge-blue">Repas</span>
+                        {% elif slot.type == 'spi' %}
+                            <span class="badge badge-cyan">Temps Spi</span>
+                        {% else %}
+                            <span class="badge badge-slate">Logistique</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ slot.responsables | join(', ') if slot.responsables else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--gray-600);">Aucune activité au planning.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. FICHES D'ACTIVITÉS -->
+    {% if activites %}
+    <div class="avoid-break" style="margin-top: 24px;">
+        <h2 class="section-title">🎯 Fiches d'Activités</h2>
+        
+        {% for act in activites %}
+        <div class="card avoid-break" style="padding: 0; overflow: hidden; border-left: 4px solid var(--scout-orange);">
+            <div style="background-color: var(--primary-dark); color: #FFFFFF; padding: 10px 16px; font-weight: 700; font-size: 11pt; display: flex; justify-content: space-between;">
+                <span>{{ act.titre }}</span>
+                <span style="font-weight: 500; font-size: 9pt; opacity: 0.9;">{{ act.horaire }}</span>
+            </div>
+            <div style="padding: 14px 16px;">
+                {% if act.imaginaire %}
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 8pt; font-weight: 800; text-transform: uppercase; color: var(--scout-orange);">Imaginaire & Objectifs</div>
+                    <div style="font-size: 9.5pt; color: var(--gray-900); margin-top: 2px;">{{ act.imaginaire }}</div>
+                </div>
+                {% endif %}
+                
+                {% if act.materiel %}
+                <div style="margin-bottom: 10px;">
+                    <div style="font-size: 8pt; font-weight: 800; text-transform: uppercase; color: var(--gray-600);">Matériel Réquis</div>
+                    <div style="font-size: 9pt; color: var(--gray-900); margin-top: 2px;">{{ act.materiel | join(' • ') }}</div>
+                </div>
+                {% endif %}
+                
+                {% if act.etapes %}
+                <div>
+                    <div style="font-size: 8pt; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 6px;">Déroulé de l'Activité</div>
+                    <div class="timeline">
+                        {% for etape in act.etapes %}
+                        <div class="timeline-item">
+                            <strong style="color: var(--primary-dark);">[{{ etape.duration_minutes }} min] {{ etape.title }}</strong>
+                            {% if etape.description %}
+                            <div style="font-size: 9pt; color: var(--gray-600); margin-top: 2px;">{{ etape.description }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 5. INTENDANCE & MENUS -->
+    {% if menus %}
+    <div class="page-break">
+        <h2 class="section-title">🍳 Intendance & Menus Détaillés</h2>
+        
+        {% for repas in menus %}
+        <table class="menu-table avoid-break" style="margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th colspan="3" class="menu-header">{{ repas.titre }} ({{ repas.horaire }})</th>
+                </tr>
+                <tr>
+                    <th class="sub-header" style="width: 35%;">Recette</th>
+                    <th class="sub-header" style="width: 45%;">Ingrédient</th>
+                    <th class="sub-header" style="width: 20%;">Quantité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recette in repas.recettes %}
+                    {% for ing in recette.ingredients %}
+                    <tr>
+                        {% if loop.first %}
+                        <td rowspan="{{ recette.ingredients|length }}" style="vertical-align: middle; font-weight: 700; color: var(--primary-dark);">
+                            {{ recette.nom }}
+                        </td>
+                        {% endif %}
+                        <td>{{ ing.nom }}</td>
+                        <td><strong style="color: var(--scout-orange);">{{ ing.quantite }} {{ ing.unite }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 6. LOGISTIQUE & MATÉRIEL -->
+    <div class="avoid-break" style="margin-top: 24px;">
+        <h2 class="section-title">🏕️ Logistique & Matériel</h2>
+        
+        <div class="card avoid-break">
+            <div class="card-header">
+                <span>Tentes du Week-end</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom de la tente</th>
+                        <th>Capacité</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tente in tentes %}
+                    <tr>
+                        <td><strong>{{ tente.name }}</strong></td>
+                        <td><span class="badge badge-blue">{{ tente.capacity }} places</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: var(--gray-600); font-style: italic;">Aucune tente sélectionnée.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card avoid-break" style="border: 2px dashed var(--gray-200); background-color: var(--gray-50);">
+            <div style="font-weight: 700; color: var(--gray-600); margin-bottom: 6px;">📝 Notes & Remarques terrain</div>
+            <p style="color: var(--gray-600); font-size: 9pt; margin: 0;">Espace réservé pour noter l'état des tentes, incidents ou remarques à reporter au retour.</p>
+            <div style="height: 80px;"></div>
+        </div>
+    </div>
+
+</body>
+</html>

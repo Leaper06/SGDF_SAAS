@@ -3,3 +3,7 @@
 node_modules/
 certbot/
 __pycache__/
+*.pyc
+scratch_*
+test_*.py
+backup_donnees_polymaitrise.sql

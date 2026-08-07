@@ -71,6 +71,30 @@
           </router-link>
       </div>
 
+      <!-- SECTION : MODÈLES ET TEMPLATES -->
+      <div>
+          <h4 class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 pl-2 transition-colors">Modèles enregistrés</h4>
+          <button 
+              @click="ouvrirModaleGestionTemplates" 
+              class="w-full bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:border-gray-200 dark:hover:border-gray-700 transition-all group"
+          >
+              <div class="flex items-center gap-3">
+                  <div class="bg-blue-50 dark:bg-gray-700 p-2 rounded-lg text-blue-600 dark:text-blue-400 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                      </svg>
+                  </div>
+                  <div class="text-left">
+                      <span class="font-bold text-gray-800 dark:text-gray-100 text-sm block transition-colors">Gérer mes modèles</span>
+                      <span class="text-xs text-gray-400 dark:text-gray-500 font-medium">Plannings week-end & checklists de matériel</span>
+                  </div>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+          </button>
+      </div>
+
       <!-- SECTION : LIENS UTILES -->
       <div>
           <div class="flex items-center justify-between mb-3 pl-2 pr-1">
@@ -94,9 +118,9 @@
                       <div class="bg-blue-50 dark:bg-gray-700 p-2 rounded-lg text-blue-500 dark:text-blue-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                       </div>
-                      <span class="font-bold text-gray-800 dark:text-gray-200 text-sm truncate transition-colors">{{ lien.nom }}</span>
+                      <span class="font-bold text-gray-800 dark:text-gray-200 text-sm truncate transition-colors">{{ lien.name }}</span>
                   </div>
-                  <button @click.prevent="supprimerLien(index)" class="text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors shrink-0">
+                  <button @click.prevent="supprimerLien(index, lien.id)" class="text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1h3M4 7h16" /></svg>
                   </button>
               </a>
@@ -185,6 +209,71 @@
           </div>
       </div>
   </transition>
+
+  <!-- MODALE GESTION DES MODÈLES -->
+  <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95" enter-to-class="opacity-100 translate-y-0 md:scale-100" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0 md:scale-100" leave-to-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95">
+      <div v-if="showManageTemplatesModal" class="fixed inset-0 pb-20 md:pb-0 z-50 flex flex-col justify-end md:justify-center md:items-center md:p-6">
+          <div class="absolute inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm transition-opacity" @click="showManageTemplatesModal = false"></div>
+          
+          <div class="relative bg-white dark:bg-gray-800 w-full md:max-w-xl h-[80vh] md:max-h-[80vh] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col z-10 overflow-hidden transition-colors">
+              <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+                  <div>
+                      <h3 class="font-extrabold text-lg text-gray-900 dark:text-white">Gestion de mes modèles</h3>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Consultez ou supprimez vos modèles réutilisables</p>
+                  </div>
+                  <button @click="showManageTemplatesModal = false" class="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full text-gray-600 dark:text-gray-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                  </button>
+              </div>
+
+              <!-- Tabs -->
+              <div class="px-6 pt-3 bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 flex gap-2">
+                  <button @click="activeTemplateTab = 'planning'" :class="['pb-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2', activeTemplateTab === 'planning' ? 'border-scoutBlue dark:border-blue-400 text-scoutBlue dark:text-blue-400' : 'border-transparent text-gray-400 dark:text-gray-500 hover:text-gray-600']">
+                      📅 Modèles de planning ({{ templatesList.length }})
+                  </button>
+                  <button @click="activeTemplateTab = 'materiel'" :class="['pb-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2', activeTemplateTab === 'materiel' ? 'border-scoutBlue dark:border-blue-400 text-scoutBlue dark:text-blue-400' : 'border-transparent text-gray-400 dark:text-gray-500 hover:text-gray-600']">
+                      📋 Modèles de matériel ({{ materialTemplates.length }})
+                  </button>
+              </div>
+
+              <div class="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50/30 dark:bg-gray-900/30">
+                  
+                  <!-- TAB PLANNING TEMPLATES -->
+                  <div v-if="activeTemplateTab === 'planning'" class="space-y-2.5">
+                      <div v-if="templatesList.length === 0" class="text-center py-8 text-sm text-gray-400">
+                          Aucun modèle de planning enregistré.
+                      </div>
+                      <div v-for="tmpl in templatesList" :key="tmpl.id" class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                          <div>
+                              <h4 class="font-bold text-gray-900 dark:text-white text-sm">{{ tmpl.name }}</h4>
+                              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mt-0.5">{{ tmpl.location || 'Local / Base' }}</p>
+                          </div>
+                          <button @click="supprimerTemplateCamp(tmpl.id)" class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- TAB MATERIAL TEMPLATES -->
+                  <div v-if="activeTemplateTab === 'materiel'" class="space-y-2.5">
+                      <div v-if="materialTemplates.length === 0" class="text-center py-8 text-sm text-gray-400">
+                          Aucun modèle de matériel enregistré.
+                      </div>
+                      <div v-for="tmpl in materialTemplates" :key="tmpl.id" class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                          <div>
+                              <h4 class="font-bold text-gray-900 dark:text-white text-sm">{{ tmpl.name }}</h4>
+                              <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mt-0.5">{{ tmpl.items?.length || 0 }} éléments dans la liste</p>
+                          </div>
+                          <button @click="supprimerTemplateMateriel(tmpl.id)" class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+  </transition>
 </template>
 
 <script setup>
@@ -192,6 +281,18 @@ import { ref, onMounted, computed } from 'vue'
 import { userEmail, chefAdherentId, groupName, chefBranch, logout } from '../stores/authStore.js'
 import { adherentsList } from '../stores/adherentsStore.js'
 import { isDarkMode, toggleDarkMode } from '../stores/themeStore.js'
+import { templatesList, fetchTemplates, supprimerTemplateCamp } from '../stores/campsStore.js'
+import { materialTemplates, fetchMaterialTemplates, supprimerTemplateMateriel } from '../stores/logistiqueStore.js'
+import { API_BASE_URL } from '../api/config.js'
+
+const showManageTemplatesModal = ref(false)
+const activeTemplateTab = ref('planning')
+
+const ouvrirModaleGestionTemplates = () => {
+    fetchTemplates()
+    fetchMaterialTemplates()
+    showManageTemplatesModal.value = true
+}
 
 const monProfil = computed(() => {
     if (!adherentsList.value || !chefAdherentId.value) return null
@@ -212,24 +313,30 @@ const initialeAvatar = computed(() => {
     return userEmail.value ? userEmail.value.charAt(0) : 'C'
 })
 
-
-// --- GESTION DES FAVORIS ---
+// --- GESTION DES FAVORIS (VIA API) ---
 const liensFavoris = ref([])
-
-// Variables pour la modale
 const showLinkModal = ref(false)
 const linkForm = ref({ nom: '', url: '' })
 
-onMounted(() => {
-    const savedLinks = localStorage.getItem('sgdf_liens_favoris')
-    if (savedLinks) {
-        liensFavoris.value = JSON.parse(savedLinks)
+// 1. Récupération des liens au chargement
+const chargerFavoris = async () => {
+    if (!chefAdherentId.value) return
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/chef/${chefAdherentId.value}/links`)
+        const data = await response.json()
+        
+        if (data.status === 'success') {
+            liensFavoris.value = data.links
+        }
+    } catch (error) {
+        console.error("Erreur lors du chargement des favoris :", error)
     }
-})
-
-const sauvegarderFavoris = () => {
-    localStorage.setItem('sgdf_liens_favoris', JSON.stringify(liensFavoris.value))
 }
+
+onMounted(() => {
+    chargerFavoris()
+})
 
 const ouvrirModaleLien = () => {
     linkForm.value = { nom: '', url: '' }
@@ -240,29 +347,62 @@ const fermerModaleLien = () => {
     showLinkModal.value = false
 }
 
-const validerLien = () => {
+// 2. Ajout d'un lien en base de données
+const validerLien = async () => {
     if (!linkForm.value.nom) return alert("Le nom est obligatoire")
     if (!linkForm.value.url) return alert("L'URL est obligatoire")
+    if (!chefAdherentId.value) return alert("Erreur : Identifiant chef introuvable.")
 
     let finalUrl = linkForm.value.url
-    
     if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
         finalUrl = 'https://' + finalUrl
     }
 
-    liensFavoris.value.push({ 
-        nom: linkForm.value.nom, 
-        url: finalUrl 
-    })
-    
-    sauvegarderFavoris()
-    fermerModaleLien()
+    try {
+        const response = await fetch(`${API_BASE_URL}/chef/${chefAdherentId.value}/links`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                nom: linkForm.value.nom, 
+                url: finalUrl 
+            })
+        })
+        
+        const data = await response.json()
+        if (data.status === 'success') {
+            // On ajoute le lien retourné par le serveur (qui contient son nouvel UUID)
+            liensFavoris.value.push(data.link)
+            fermerModaleLien()
+        } else {
+            alert("Erreur lors de l'enregistrement.")
+        }
+    } catch (error) {
+        console.error("Erreur d'ajout :", error)
+        alert("Impossible de joindre le serveur.")
+    }
 }
 
-const supprimerLien = (index) => {
-    if (confirm("Retirer ce lien de vos favoris ?")) {
-        liensFavoris.value.splice(index, 1)
-        sauvegarderFavoris()
+// 3. Suppression d'un lien en base de données
+const supprimerLien = async (index, linkId) => {
+    if (!confirm("Retirer ce lien de vos favoris ?")) return
+    
+    // Si le lien n'a pas d'ID en base, on arrête là
+    if (!linkId) return 
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/links/${linkId}`, {
+            method: 'DELETE'
+        })
+        
+        const data = await response.json()
+        if (data.status === 'success') {
+            liensFavoris.value.splice(index, 1)
+        } else {
+            alert("Erreur lors de la suppression.")
+        }
+    } catch (error) {
+        console.error("Erreur de suppression :", error)
+        alert("Impossible de joindre le serveur.")
     }
 }
 </script>

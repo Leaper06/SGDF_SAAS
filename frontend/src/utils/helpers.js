@@ -12,15 +12,16 @@ export const separerNomPrenom = (nomComplet) => {
 
 export const getTheme = (type) => {
   switch (type) {
-    case 'jeu': return { border: 'border-[#e85d22]', textTime: 'text-[#e85d22]', bgBadge: 'bg-orange-50 text-[#e85d22]' }
-    case 'repas': return { border: 'border-scoutBlue', textTime: 'text-scoutBlue', bgBadge: 'bg-blue-50 text-scoutBlue' }
-    case 'spi': return { border: 'border-[#009ee0]', textTime: 'text-[#009ee0]', bgBadge: 'bg-cyan-50 text-[#009ee0]' }
-    default: return { border: 'border-gray-400', textTime: 'text-gray-700', bgBadge: 'bg-gray-100 text-gray-500' }
+    case 'jeu': return { border: 'border-[#e85d22]', textTime: 'text-[#e85d22] dark:text-orange-400', bgBadge: 'bg-orange-50 dark:bg-orange-900/30 text-[#e85d22] dark:text-orange-400' }
+    case 'repas': return { border: 'border-scoutBlue dark:border-blue-500', textTime: 'text-scoutBlue dark:text-blue-400', bgBadge: 'bg-blue-50 dark:bg-blue-900/30 text-scoutBlue dark:text-blue-400' }
+    case 'service': return { border: 'border-amber-500', textTime: 'text-amber-600 dark:text-amber-400', bgBadge: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' }
+    case 'autre': return { border: 'border-gray-400 dark:border-gray-600', textTime: 'text-gray-600 dark:text-gray-400', bgBadge: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' }
+    default: return { border: 'border-gray-400 dark:border-gray-600', textTime: 'text-gray-600 dark:text-gray-400', bgBadge: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' }
   }
 }
 
 export const formatTypeLabel = (type) => {
-  const labels = { 'jeu': 'Jeu / Anim', 'repas': 'Intendance', 'spi': 'Temps Spi', 'logistique': 'Logistique' }
+  const labels = { 'jeu': 'Jeu / Anim', 'repas': 'Intendance', 'service': 'Service / Rangement', 'autre': 'Autre' }
   return labels[type] || 'Activité'
 }
 

@@ -146,7 +146,6 @@
                                             Je confirme avoir l'autorité parentale et j'accepte que les données de santé de cet enfant soient traitées pour le camp, conformément aux <router-link to="/mentions-legales" class="underline font-bold" :class="branchStyles.text">Mentions Légales</router-link>.
                                         </label>
                                     </div>
-
                                     <div class="flex gap-2">
                                         <button v-if="selectedMember.ficheUrl" @click="consulterFiche" class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm">
                                             Consulter
@@ -161,13 +160,47 @@
                                             !rgpdAccepte ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed' : 
                                             (selectedMember.ficheUrl ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' : 'bg-[#004267] dark:bg-blue-600 text-white hover:bg-blue-900 dark:hover:bg-blue-700')
                                         ]"
-                                    >
-                                        {{ selectedMember.ficheUrl ? 'Remplacer' : 'Importer (PDF / IMG)' }}
-                                    </button>
+                                        >
+                                            {{ selectedMember.ficheUrl ? 'Remplacer' : 'Importer (PDF / IMG)' }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                             
+                            <!-- ===== DÉBUT DU BLOC RESTAURÉ : PROGRESSION PERSONNELLE ===== -->
+                            <div class="space-y-3 pt-2">
+                                <h3 class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">Progression Personnelle</h3>
+                                
+                                <div :class="['border rounded-xl p-4 space-y-3 transition-colors', branchStyles.lightBg, branchStyles.lightBorder]">
+                                    <div>
+                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1 transition-colors', branchStyles.text]">Étape / Insigne (Atout, Cap...)</label>
+                                        <input 
+                                            v-model="selectedMember.progressionSymbole"
+                                            @blur="sauvegarderProgression"
+                                            type="text"
+                                            placeholder="Ex: Atout de la Rencontre"
+                                            :class="['w-full bg-white dark:bg-gray-900 border text-gray-900 dark:text-white font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600', branchStyles.lightBorder, branchStyles.focusBorder]"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label :class="['block text-[10px] font-bold uppercase tracking-wider mb-1 transition-colors', branchStyles.text]">Défi / Action à réaliser</label>
+                                        <textarea 
+                                            v-model="selectedMember.progressionAction"
+                                            @blur="sauvegarderProgression"
+                                            rows="2"
+                                            placeholder="Ex: Organiser un grand jeu..."
+                                            :class="['w-full bg-white dark:bg-gray-900 border text-gray-900 dark:text-white font-medium rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors resize-none placeholder-gray-400 dark:placeholder-gray-600', branchStyles.lightBorder, branchStyles.focusBorder]"
+                                        ></textarea>
+                                    </div>
+                                    
+                                    <!-- Petit indicateur visuel lors de la sauvegarde -->
+                                    <div v-if="isSavingProgression" class="flex justify-end">
+                                        <span class="text-[10px] font-bold text-green-500 animate-pulse">Sauvegarde...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ===== FIN DU BLOC RESTAURÉ ===== -->
+
                             <!-- LES DEUX INPUTS CACHÉS DOIVENT ÊTRE ICI -->
                             <input type="file" id="ficheInput" accept="image/png, image/jpeg, application/pdf" ref="ficheInput" @change="handleFicheUpload" class="hidden">
                             <input type="file" id="photoInput" accept="image/*" ref="photoInput" @change="handlePhotoUpload" class="hidden">

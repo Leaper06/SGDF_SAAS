@@ -123,3 +123,135 @@ def manage_attendance(camp_id):
             db.table('camp_attendance').insert(inserts).execute()
             
         return jsonify({"status": "success", "message": "Présences mises à jour"}), 200
+
+
+# ==========================================
+# GESTION DU MATÉRIEL DE CAMP & TEMPLATES
+# ==========================================
+
+@logistique_bp.route('/api/camps/<camp_id>/materials', methods=['GET', 'POST'])
+def manage_camp_materials(camp_id):
+    """
+    Gère la checklist de matériel à emporter pour un camp.
+    GET: retourne la liste des éléments.
+    POST: met à jour la liste des éléments (remplacement / upsert).
+    """
+    db = get_db()
+    
+    if request.method == 'GET':
+        try:
+            res = db.table('camp_materials').select('*').eq('camp_id', camp_id).execute()
+            return jsonify({"status": "success", "data": res.data or []}), 200
+        except Exception as e:
+            logging.error(f"Erreur GET camp materials : {e}")
+            return jsonify({"error": "Erreur serveur"}), 500
+            
+    if request.method == 'POST':
+        try:
+            data = request.json
+            items = data.get('items', [])
+            
+            # Remplacement destructif de la liste du camp
+            db.table('camp_materials').delete().eq('camp_id', camp_id).execute()
+            
+            if items:
+                inserts = [{
+                    "camp_id": camp_id,
+                    "name": item['name'],
+                    "is_checked": item.get('is_checked', False)
+                } for item in items if item.get('name')]
+                
+                if inserts:
+                    db.table('camp_materials').insert(inserts).execute()
+                    
+            res = db.table('camp_materials').select('*').eq('camp_id', camp_id).execute()
+            return jsonify({"status": "success", "data": res.data or []}), 200
+        except Exception as e:
+            logging.error(f"Erreur POST camp materials : {e}")
+            return jsonify({"error": "Erreur serveur"}), 500
+
+
+@logistique_bp.route('/api/material_templates', methods=['GET', 'POST'])
+def manage_material_templates():
+    """
+    GET: Récupère la liste des modèles de matériel.
+    POST: Crée un nouveau modèle de matériel.
+    """
+    db = get_db()
+    
+    if request.method == 'GET':
+        try:
+            res = db.table('material_templates').select('*').execute()
+            return jsonify({"status": "success", "data": res.data or []}), 200
+        except Exception as e:
+            logging.error(f"Erreur GET material templates : {e}")
+            return jsonify({"error": "Erreur serveur"}), 500
+            
+    if request.method == 'POST':
+        try:
+            data = request.json
+            tmpl_name = data.get('name', 'Nouveau modèle matériel')
+            items = data.get('items', []) # Liste de noms de matériels ex: ["Malle pharma", "Bâche"]
+            unit_id = data.get('unit_id')
+            
+            new_tmpl = {
+                "name": tmpl_name,
+                "unit_id": unit_id,
+                "items": items
+            }
+            
+            res = db.table('material_templates').insert(new_tmpl).execute()
+            return jsonify({"status": "success", "data": res.data}), 201
+        except Exception as e:
+            logging.error(f"Erreur POST material templates : {e}")
+            return jsonify({"error": "Erreur serveur"}), 500
+
+
+@logistique_bp.route('/api/camps/<camp_id>/materials/apply-template', methods=['POST'])
+def apply_material_template(camp_id):
+    """
+    Injecte les éléments d'un modèle de matériel dans la checklist d'un camp.
+    """
+    db = get_db()
+    try:
+        data = request.json
+        template_id = data.get('template_id')
+        
+        if not template_id:
+            return jsonify({"error": "template_id requis"}), 400
+            
+        tmpl_res = db.table('material_templates').select('*').eq('id', template_id).execute()
+        if not tmpl_res.data:
+            return jsonify({"error": "Modèle introuvable"}), 404
+            
+        items = tmpl_res.data[0].get('items', [])
+        
+        # Insère les nouveaux éléments sans supprimer les existants (ou cumule)
+        inserts = [{
+            "camp_id": camp_id,
+            "name": name,
+            "is_checked": False
+        } for name in items if name]
+        
+        if inserts:
+            db.table('camp_materials').insert(inserts).execute()
+            
+        res = db.table('camp_materials').select('*').eq('camp_id', camp_id).execute()
+        return jsonify({"status": "success", "data": res.data or []}), 200
+    except Exception as e:
+        logging.error(f"Erreur application template matériel : {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+@logistique_bp.route('/api/material_templates/<template_id>', methods=['DELETE'])
+def delete_material_template(template_id):
+    """
+    Supprime un modèle de matériel par son ID.
+    """
+    try:
+        db = get_db()
+        db.table('material_templates').delete().eq('id', template_id).execute()
+        return jsonify({"status": "success", "message": "Modèle matériel supprimé avec succès"}), 200
+    except Exception as e:
+        logging.error(f"Erreur suppression modèle matériel : {e}")
+        return jsonify({"error": "Erreur serveur"}), 500

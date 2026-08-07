@@ -15,8 +15,9 @@ export const needsIdentification = ref(localStorage.getItem('sgdf_needs_id') ===
 export const chefAdherentId = ref(localStorage.getItem('sgdf_chef_id') || null)
 export const chefBranch = ref(localStorage.getItem('sgdf_chef_branch') || 'Inconnue')
 export const unitName = ref(localStorage.getItem('sgdf_unit_name') || "Mon Unité")
+export const unitId = ref(localStorage.getItem('sgdf_unit_id') || null)
 
-// NOUVEAU : Le flag qui indique si on est en démo (pas de localStorage, ça reset au F5)
+
 export const isDemoMode = ref(false) 
 
 // ==========================================
@@ -32,7 +33,7 @@ export const groupName = computed(() => {
 // ACTIONS (Fonctions)
 // ==========================================
 
-// NOUVELLE FONCTION : Simule une connexion parfaite pour les testeurs
+
 export const loginDemo = () => {
     isLoggingIn.value = true
     loginError.value = ''
@@ -46,7 +47,7 @@ export const loginDemo = () => {
         chefAdherentId.value = 'Id-demo-chef'
         unitName.value = "MOUSSES ST MALO - NOTRE DAME D'ALETH (14)"
         chefBranch.value = 'SG'
-        
+        unitId.value = 'demo-unit-id'
         isLoggingIn.value = false
         router.push('/unite')
     }, 800)
@@ -84,6 +85,10 @@ export const loginToSGDF = async (username, password) => {
         unitName.value = json.unit_name
         localStorage.setItem('sgdf_unit_name', json.unit_name)
       }
+      if (json.unit_id) {
+        unitId.value = json.unit_id
+        localStorage.setItem('sgdf_unit_id', json.unit_id)
+      }
       
       const redirectPath = localStorage.getItem('sgdf_redirect_after_login')
       if (redirectPath) {
@@ -106,6 +111,7 @@ export const loginToSGDF = async (username, password) => {
 export const logout = () => {
   userToken.value = null
   userEmail.value = null
+  unitId.value = null
   needsIdentification.value = false
   isDemoMode.value = false // On remet l'application en mode réel
   
@@ -114,6 +120,7 @@ export const logout = () => {
   localStorage.removeItem('sgdf_needs_id') 
   localStorage.removeItem('sgdf_chef_id')      
   localStorage.removeItem('sgdf_chef_branch')
+  localStorage.removeItem('sgdf_unit_id')
   
   router.push('/login')
 }

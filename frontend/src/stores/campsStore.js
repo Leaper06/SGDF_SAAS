@@ -2,9 +2,10 @@
 import { ref, computed } from 'vue'
 import router from '../router.js'
 import { API_BASE_URL } from '../api/config.js'
-import { userToken, isDemoMode } from './authStore.js' 
+import { userToken, isDemoMode, unitId, unitName } from './authStore.js' 
 
 export const campsList = ref([])
+export const templatesList = ref([])
 export const selectedCamp = ref(null)
 export const loading = ref(true)
 export const currentDate = ref(new Date())
@@ -12,7 +13,7 @@ export const showCampMenu = ref(false)
 
 // Modales et Formulaires pour les Camps
 export const showAddModal = ref(false)
-export const newEvent = ref({ type: 'weekend', name: '', location: '', startDate: '', endDate: '' })
+export const newEvent = ref({ type: 'weekend', name: '', location: '', startDate: '', endDate: '', templateId: '' })
 export const showEditCampModal = ref(false)
 export const editCampForm = ref({ name: '', location: '', startDate: '', endDate: '' })
 
@@ -106,6 +107,17 @@ export const selectionnerDate = (date) => {
 export const fermerModal = () => showAddModal.value = false
 export const fermerEditCampModal = () => showEditCampModal.value = false
 
+export const fetchTemplates = async () => {
+  if (!userToken.value) return
+  try {
+    const response = await fetch(`${API_BASE_URL}/camps/templates`, {
+      headers: { 'Authorization': `Bearer ${userToken.value}` }
+    })
+    const json = await response.json()
+    if (json.status === 'success') templatesList.value = json.data
+  } catch (error) { console.error('Erreur API templates:', error) }
+}
+
 export const fetchCamps = async () => {
   if (!userToken.value) return
   // === INTERCEPTION MODE DÉMO ===
@@ -138,36 +150,57 @@ export const fetchCamps = async () => {
 
 export const soumettreEvenement = async () => {
   if (!newEvent.value.name || !newEvent.value.startDate) { alert("Titre et date obligatoires !"); return; }
+  
   // === INTERCEPTION MODE DÉMO ===
   if (isDemoMode.value) {
     campsList.value.push({
-      id: 'demo-new-' + Date.now(), // Faux ID unique
+      id: 'demo-new-' + Date.now(), 
       name: newEvent.value.name,
       location: newEvent.value.location,
       start_date: newEvent.value.startDate,
       end_date: newEvent.value.endDate || newEvent.value.startDate
     })
     fermerModal()
-    newEvent.value = { type: 'weekend', name: '', location: '', startDate: '', endDate: '' }
+    newEvent.value = { type: 'weekend', name: '', location: '', startDate: '', endDate: '', templateId: '' }
     return
   }
   // =============================
+  
   try {
+    // 1. On prépare le paquet de données en ajoutant l'ID de l'unité
+    const payload = {
+        name: newEvent.value.name,
+        location: newEvent.value.location,
+        start_date: newEvent.value.startDate,
+        end_date: newEvent.value.endDate || newEvent.value.startDate,
+        type: newEvent.value.type,
+        unit_id: unitId.value,
+        unit_name: unitName.value,
+        template_id: newEvent.value.templateId || null
+    };
+
     const response = await fetch(`${API_BASE_URL}/camps`, {
       method: 'POST', 
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userToken.value}`
       }, 
-      body: JSON.stringify(newEvent.value)
+      // 2. On envoie notre payload au lieu de newEvent.value
+      body: JSON.stringify(payload)
     });
+    
     const json = await response.json();
+    
     if (json.status === 'success') {
       fermerModal();
-      newEvent.value = { type: 'weekend', name: '', location: '', startDate: '', endDate: '' };
+      newEvent.value = { type: 'weekend', name: '', location: '', startDate: '', endDate: '', templateId: '' };
       await fetchCamps();
-    } else { alert("Erreur : " + json.message); }
-  } catch (error) { console.error("Erreur :", error); }
+    } else { 
+        alert("Erreur : " + json.message); 
+    }
+  } catch (error) { 
+      console.error("Erreur :", error); 
+  }
 };
 
 export const modifierCamp = () => {
@@ -225,4 +258,55 @@ export const supprimerCamp = async () => {
       } else { alert("Erreur : " + json.message) }
     } catch (error) { console.error("Erreur :", error) }
   }
+}
+
+export const creerTemplateAPartirDeCamp = async (campId, templateName) => {
+    if (isDemoMode.value) {
+        templatesList.value.push({
+            id: 'demo-tmpl-' + Date.now(),
+            name: templateName,
+            location: 'Local SGDF',
+            is_template: true
+        })
+        alert("Modèle créé avec succès !")
+        return
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/camps/${campId}/make-template`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken.value}` 
+            },
+            body: JSON.stringify({ name: templateName })
+        })
+        const json = await response.json()
+        if (json.status === 'success') {
+            alert("Week-end enregistré comme modèle avec succès !")
+            await fetchTemplates()
+        } else {
+            alert("Erreur : " + json.message)
+        }
+    } catch (e) {
+        console.error("Erreur création template :", e)
+    }
+}
+
+export const supprimerTemplateCamp = async (templateId) => {
+    if (!confirm("Supprimer ce modèle de planning ?")) return
+    if (isDemoMode.value) {
+        templatesList.value = templatesList.value.filter(t => t.id !== templateId)
+        return
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/camps/${templateId}`, { method: 'DELETE' })
+        const json = await response.json()
+        if (json.status === 'success') {
+            await fetchTemplates()
+        } else {
+            alert("Erreur lors de la suppression")
+        }
+    } catch (e) {
+        console.error("Erreur suppression template planning :", e)
+    }
 }

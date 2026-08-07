@@ -82,14 +82,14 @@
                                     
                                     <div class="flex gap-4">
                                         <div class="flex-1">
-                                            <label class="block text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mb-1.5 transition-colors">Enfant (-11 ans)</label>
+                                            <label class="block text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mb-1.5 transition-colors">Enfant</label>
                                             <div class="relative">
                                                 <input v-model="ing.qty_child" type="number" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2.5 text-sm font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5b2b82]/30 dark:focus:ring-purple-500/30 transition-colors">
                                                 <span class="absolute right-3 top-2.5 text-[11px] text-gray-400 dark:text-gray-500 font-black transition-colors">g</span>
                                             </div>
                                         </div>
                                         <div class="flex-1">
-                                            <label class="block text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mb-1.5 transition-colors">Adulte / Pio</label>
+                                            <label class="block text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase mb-1.5 transition-colors">Ado / Adulte</label>
                                             <div class="relative">
                                                 <input v-model="ing.qty_adult" type="number" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2.5 text-sm font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5b2b82]/30 dark:focus:ring-purple-500/30 transition-colors">
                                                 <span class="absolute right-3 top-2.5 text-[11px] text-gray-400 dark:text-gray-500 font-black transition-colors">g</span>

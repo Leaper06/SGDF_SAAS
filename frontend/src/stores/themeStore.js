@@ -6,11 +6,19 @@ const initialDark = storedTheme === 'dark'
 
 export const isDarkMode = ref(initialDark)
 
-if (initialDark) {
-    document.documentElement.classList.add('dark')
-} else {
-    document.documentElement.classList.remove('dark')
+export const initTheme = () => {
+    const stored = localStorage.getItem('polymaitrise_theme')
+    const isDark = stored === 'dark'
+    isDarkMode.value = isDark
+    if (isDark) {
+        document.documentElement.classList.add('dark')
+    } else {
+        document.documentElement.classList.remove('dark')
+    }
 }
+
+// Initialisation globale automatique
+initTheme()
 
 // Fonction pour le bouton de la page Profil
 export const toggleDarkMode = () => {

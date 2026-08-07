@@ -113,8 +113,17 @@
                 <button @click="newEvent.type = 'weekend'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', newEvent.type === 'weekend' ? `bg-white dark:bg-gray-800 shadow-sm ${branchStyles.text}` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300']">Week-end</button>
               </div>
 
-              <!-- Formulaire -->
+                <!-- Formulaire -->
               <div class="space-y-4">
+                <div class="w-full overflow-hidden">
+                  <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Modèle de planning (Optionnel)</label>
+                  <select v-model="newEvent.templateId" :class="['w-full truncate bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
+                    <option value="">-- Aucun modèle (Planning vide) --</option>
+                    <option v-for="tmpl in templatesList" :key="tmpl.id" :value="tmpl.id">
+                      {{ tmpl.name }} {{ tmpl.unit_id ? '(Personnalisé)' : '(Global)' }}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Titre de l'événement</label>
                   <input v-model="newEvent.name" type="text" placeholder="Ex: WE d'équipage" :class="['w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
@@ -152,10 +161,10 @@ import { formatWeekday, formatDay } from '../utils/helpers.js'
 import { computed, onMounted } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, isDemoMode } from '../stores/authStore.js'
 import { 
-  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  selectedCamp, campsList, templatesList, loading, currentDate, showCampMenu,
   showAddModal, newEvent, showEditCampModal, editCampForm,
   moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
-  changerMois, selectionnerDate, fermerModal, fetchCamps, 
+  changerMois, selectionnerDate, fermerModal, fetchCamps, fetchTemplates, 
   soumettreEvenement, modifierCamp, fermerEditCampModal, 
   soumettreModificationCamp, supprimerCamp 
 } from '../stores/campsStore.js'
@@ -204,6 +213,6 @@ const gererClicJour = (jour) => {
 }
 
 onMounted(async () => {
-    await fetchCamps()
+    await Promise.all([fetchTemplates(), fetchCamps()])
 })
 </script>

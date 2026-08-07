@@ -5,6 +5,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 
+
 # --- IMPORTS DES BLUEPRINTS ---
 from routes.auth import auth_bp
 from routes.camps import camps_bp
@@ -12,8 +13,11 @@ from routes.planning import planning_bp
 from routes.intendance import intendance_bp
 from routes.adherents import adherents_bp
 from routes.logistique import logistique_bp
-from  routes.tents import tents_bp
+from routes.tents import tents_bp
 from routes.locations import locations_bp
+from routes.lien import liens_bp
+from routes.campPDF import campPDF_bp
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
@@ -28,6 +32,9 @@ app.register_blueprint(adherents_bp)
 app.register_blueprint(logistique_bp)
 app.register_blueprint(tents_bp)
 app.register_blueprint(locations_bp)
+app.register_blueprint(liens_bp)
+app.register_blueprint(campPDF_bp)
+
 
 @app.route('/api/status', methods=['GET'])
 def health_check():
@@ -63,4 +70,9 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
+    try:
+        from seed_templates import seed_templates
+        seed_templates()
+    except Exception as e:
+        logging.warning(f"Impossible d'exécuter le seed des templates : {e}")
     app.run(debug=True, port=5001)

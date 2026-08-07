@@ -28,14 +28,23 @@ def login():
     session_token = str(uuid.uuid4())
     chef_adherent_id = None
     needs_identification = True 
+    unit_id = None
 
     if mapping_res.data:
         chef_adherent_id = mapping_res.data[0]['adherent_id']
         needs_identification = False
+        unit_id = mapping_res.data[0].get('unit_id')
+
+    # Recherche de l'unit_id dans la table units si non présent dans chef_mappings
+    if not unit_id and unit_name:
+        unit_res = db.table('units').select('id').eq('name', unit_name).execute()
+        if unit_res.data:
+            unit_id = unit_res.data[0]['id']
 
     ACTIVE_SESSIONS[session_token] = {
         "http": session_http,
         "unit_name": unit_name,
+        "unit_id": unit_id,
         "email": username,
         "adherent_id": chef_adherent_id
     }
@@ -44,7 +53,9 @@ def login():
         "message": "Connexion réussie",
         "token": session_token,
         "needs_identification": needs_identification,
-        "email": username
+        "email": username,
+        "unit_name": unit_name,
+        "unit_id": unit_id
     }), 200
 
 

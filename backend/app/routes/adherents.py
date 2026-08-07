@@ -1,4 +1,6 @@
 import logging
+import re
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request, current_app
 from database import get_db
 from services.session_manager import get_user_session
@@ -11,23 +13,80 @@ adherents_bp = Blueprint('adherents', __name__)
 @adherents_bp.route('/api/adherents', methods=['GET'])
 def get_adherents():
     """
-    Récupère la liste des adhérents via scraping de l'intranet SGDF 
-    en utilisant la session HTTP active de l'utilisateur.
+    Récupère la liste des adhérents via scraping de l'intranet SGDF,
+    et met en cache les résultats dans la table 'unit_members' de Supabase.
     """
     user_data = get_user_session()
     if not user_data:
         return jsonify({"error": "Non autorisé"}), 401
         
     try:
+        # 1. Récupération des données via l'intranet
         adherents_info = scrape_liste_adherents(user_data["http"])
+        raw_adherents = adherents_info.get("adherents", [])
+        unit_name = adherents_info.get("unit_name")
+        
+        # --- MISE EN CACHE DANS SUPABASE ---
+        if unit_name and len(raw_adherents) > 1:
+            db = get_db()
+            
+            # A. Vérifier si l'unité existe, sinon la créer
+            unit_res = db.table('units').select('id').eq('name', unit_name).execute()
+            
+            if not unit_res.data:
+                unit_res = db.table('units').insert({'name': unit_name}).execute()
+                
+            if unit_res.data:
+                unit_id = unit_res.data[0]['id']
+                members_to_upsert = []
+                
+                # B. Formater les données (en ignorant la ligne d'en-tête [1:])
+                for row in raw_adherents[1:]:
+                    # Nettoyer les colonnes vides
+                    cols = [str(c).strip() for c in row if str(c).strip() != '']
+                    if len(cols) < 2:
+                        continue
+                        
+                    row_text = " ".join(cols)
+                    
+                    # C. Détection du type d'adhérent (logique identique à ton frontend)
+                    is_jeune = bool(re.search(r'\b1\d{2}\b', row_text))
+                    is_chef = bool(re.search(r'\b2\d{2}\b', row_text))
+                    
+                    # D. Séparation basique Nom / Prénom (ex: "DUPONT Jean")
+                    raw_name = cols[0]
+                    name_parts = raw_name.split(" ", 1)
+                    last_name = name_parts[0]
+                    first_name = name_parts[1] if len(name_parts) > 1 else ""
+                    
+                    adherent_id = cols[1]
+                    
+                    # E. Préparation de la ligne
+                    members_to_upsert.append({
+                        "adherent_id": adherent_id,
+                        "unit_id": unit_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "is_jeune": is_jeune,
+                        "is_chef": is_chef,
+                        "last_synced_at": datetime.now(timezone.utc).isoformat()
+                    })
+                
+                # F. Insertion ou mise à jour en masse
+                if members_to_upsert:
+                    db.table('unit_members').upsert(members_to_upsert).execute()
+        # -----------------------------------
+
+        # On retourne les données intactes pour ne pas casser ton frontend existant
         return jsonify({
             "status": "success", 
-            "data": adherents_info.get("adherents", []), 
-            "unit_name": adherents_info.get("unit_name"),
+            "data": raw_adherents, 
+            "unit_name": unit_name,
             "adherent_id": user_data.get("adherent_id")
         }), 200
+        
     except Exception as e:
-        logging.error(f"Erreur scraping adhérents : {e}")
+        logging.error(f"Erreur scraping/mise en cache adhérents : {e}")
         return jsonify({"error": "Erreur lors de la récupération des adhérents"}), 500
 
 @adherents_bp.route('/api/adherents/extras', methods=['GET'])

@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../api/config.js'
 import { selectedCamp, joursDuCamp } from './campsStore.js'
 import { userToken, isDemoMode } from './authStore.js'
 import { chefs } from './adherentsStore.js'
+import { supabase } from '../api/supabase.js'
 
 // ==========================================
 // ÉTAT GLOBAL (Variables)
@@ -14,10 +15,10 @@ export const slotsList = ref([])
 // Formulaires et modales des créneaux
 export const showEditSlotModal = ref(false)
 export const slotToEditId = ref(null) 
-export const editSlot = ref({ title: '', slot_type: 'logistique', selected_day: null, start_hour: '', end_hour: '' })
+export const editSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '' })
 export const joursOuverts = ref({})
 export const showAddSlotModal = ref(false)
-export const newSlot = ref({ title: '', slot_type: 'logistique', selected_day: null, start_hour: '', end_hour: '' })
+export const newSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '' })
 
 // Fiche d'activité (imaginaire, étapes, matériel)
 export const currentActivity = ref({ id: null, imaginary_and_objectives: '', steps: [], materials: [] })
@@ -31,6 +32,7 @@ export const newStep = ref({ title: '', description: '', duration_minutes: 15 })
 export const showResponsiblesModal = ref(false)
 export const activityResponsibles = ref([]) 
 export const presentChefs = ref([]) 
+export const campChefsList = ref([]) 
 
 // Invitation chef externe
 export const showInviteModal = ref(false)
@@ -50,7 +52,8 @@ export const slotsParJour = computed(() => {
 })
 
 export const selectedResponsiblesDetails = computed(() => {
-    return chefs.value.filter(c => activityResponsibles.value.includes(String(c.id)))
+    const list = campChefsList.value.length > 0 ? campChefsList.value : chefs.value
+    return list.filter(c => activityResponsibles.value.includes(String(c.id)))
 })
 
 // ==========================================
@@ -60,6 +63,61 @@ export const ouvrirPlanning = async (camp) => {
   selectedCamp.value = camp
   router.push('/planning') 
   await fetchSlots(camp.id)
+  await chargerChefsCamp(camp.id)
+  subscribeToPlanning(camp.id)
+}
+
+// ==========================================
+// ABONNEMENTS TEMPS RÉEL (Supabase)
+// ==========================================
+let planningSubscription = null
+export const subscribeToPlanning = (campId) => {
+  if (planningSubscription) supabase.removeChannel(planningSubscription)
+  
+  planningSubscription = supabase.channel('planning-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planning_slots', filter: `camp_id=eq.${campId}` }, () => fetchSlots(campId))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'planning_slots', filter: `camp_id=eq.${campId}` }, () => fetchSlots(campId))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'planning_slots' }, () => fetchSlots(campId))
+    .subscribe()
+}
+
+let activitySubscription = null
+export const subscribeToActivity = (activityId) => {
+  if (activitySubscription) supabase.removeChannel(activitySubscription)
+
+  activitySubscription = supabase.channel('activity-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities', filter: `id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activities', filter: `id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'activities' }, () => reFetchActivity())
+    
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_steps', filter: `activity_id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activity_steps', filter: `activity_id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'activity_steps' }, () => reFetchActivity())
+    
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_materials', filter: `activity_id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activity_materials', filter: `activity_id=eq.${activityId}` }, () => reFetchActivity())
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'activity_materials' }, () => reFetchActivity())
+    
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_responsibles', filter: `activity_id=eq.${activityId}` }, () => chargerResponsablesActivite())
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'activity_responsibles', filter: `activity_id=eq.${activityId}` }, () => chargerResponsablesActivite())
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'activity_responsibles' }, () => chargerResponsablesActivite())
+    .subscribe()
+}
+
+const reFetchActivity = async () => {
+  if (!selectedSlot.value || !selectedSlot.value.id) return
+  try {
+    const response = await fetch(`${API_BASE_URL}/planning_slots/${selectedSlot.value.id}/activity`)
+    const json = await response.json()
+    if (json.status === 'success') {
+      currentActivity.value = { 
+        id: json.data.activity.id, 
+        imaginary_and_objectives: json.data.activity.imaginary_and_objectives || '', 
+        steps: json.data.steps || [], 
+        materials: json.data.materials || [] 
+      }
+    }
+  } catch (error) { console.error("Erreur de rafraîchissement temps réel :", error) }
 }
 
 export const fetchSlots = async (campId) => {
@@ -88,7 +146,7 @@ export const fetchSlots = async (campId) => {
 export const exporterPlanning = () => { alert("Bientôt : Export PDF") }
 
 export const ouvrirAjoutSlot = () => {
-  newSlot.value = { title: '', slot_type: 'logistique', selected_day: joursDuCamp.value[0], start_hour: '', end_hour: '' }
+  newSlot.value = { title: '', slot_type: 'service', selected_day: joursDuCamp.value[0], start_hour: '', end_hour: '' }
   showAddSlotModal.value = true
 }
 
@@ -146,7 +204,7 @@ export const modifierSlot = (slot) => {
       if (found) matchingDay = found
     }
   }
-  editSlot.value = { title: slot.title || '', slot_type: slot.slot_type || 'logistique', selected_day: matchingDay, start_hour: getHeureString(slot.start_time), end_hour: getHeureString(slot.end_time) }
+  editSlot.value = { title: slot.title || '', slot_type: slot.slot_type || 'service', selected_day: matchingDay, start_hour: getHeureString(slot.start_time), end_hour: getHeureString(slot.end_time) }
   showEditSlotModal.value = true
 }
 
@@ -207,6 +265,36 @@ export const supprimerSlot = async (slotId) => {
 // ==========================================
 // ACTIONS (Fiche d'Activité)
 // ==========================================
+export const chargerChefsCamp = async (campId) => {
+  if (!campId) return
+  if (isDemoMode.value) {
+    campChefsList.value = [
+      { id: 'demo-chef-loic', nom: 'Test', prenom: 'Utilisateur', code: '222' },
+      { id: 'demo-chef-2', nom: 'DUPONT', prenom: 'Robert', code: '222' }
+    ]
+    return
+  }
+  try {
+    const rosterRes = await fetch(`${API_BASE_URL}/camps/${campId}/roster`, {
+      headers: { 'Authorization': `Bearer ${userToken.value}` }
+    })
+    const rosterData = await rosterRes.json()
+    if (rosterData.status === 'success' && rosterData.data) {
+      campChefsList.value = rosterData.data
+        .filter(m => m.is_chef)
+        .map(m => ({
+          id: String(m.adherent_id),
+          nom: m.last_name || m.nom || '',
+          prenom: m.first_name || m.prenom || '',
+          code: m.code || '222',
+          photo: m.photo || null
+        }))
+    }
+  } catch (e) {
+    console.error("Erreur lors du chargement des chefs du camp :", e)
+  }
+}
+
 export const ouvrirFicheActivite = async (slot) => {
   selectedSlot.value = slot; router.push('/activity')
   try {
@@ -214,6 +302,10 @@ export const ouvrirFicheActivite = async (slot) => {
     const json = await response.json()
     if (json.status === 'success') {
       currentActivity.value = { id: json.data.activity.id, imaginary_and_objectives: json.data.activity.imaginary_and_objectives || '', steps: json.data.steps || [], materials: json.data.materials || [] }
+      subscribeToActivity(currentActivity.value.id)
+    }
+    if (selectedCamp.value && campChefsList.value.length === 0) {
+      await chargerChefsCamp(selectedCamp.value.id)
     }
     await chargerResponsablesActivite()
   } catch (error) { console.error("Erreur :", error) }
@@ -225,7 +317,10 @@ export const sauvegarderFicheActivite = async () => {
     if (json.status === 'success') fermerFicheActivite()
   } catch (error) { console.error("Erreur :", error) }
 }
-export const fermerFicheActivite = () => { selectedSlot.value = null; router.push('/planning') }
+export const fermerFicheActivite = () => { 
+  if (activitySubscription) supabase.removeChannel(activitySubscription)
+  selectedSlot.value = null; router.push('/planning') 
+}
 export const ajouterMateriel = () => {
   if (newMaterialName.value.trim() === '') return
   currentActivity.value.materials.push({ id: Date.now(), item_name: newMaterialName.value, is_checked: false })
@@ -255,14 +350,23 @@ export const ajouterEtape = () => {
 // ==========================================
 export const ouvrirGestionResponsables = async () => {
     if (!currentActivity.value || !selectedCamp.value) return
+    
+    await chargerChefsCamp(selectedCamp.value.id)
+    const availableChefs = campChefsList.value.length > 0 ? campChefsList.value : chefs.value
+
     try {
         const attRes = await fetch(`${API_BASE_URL}/camps/${selectedCamp.value.id}/attendance`, { headers: { 'Authorization': `Bearer ${userToken.value}` } })
         const attData = await attRes.json()
-        if (attData.status === 'success' && attData.present.length > 0) {
+        if (attData.status === 'success' && attData.present && attData.present.length > 0) {
             const presentIds = attData.present.map(String)
-            presentChefs.value = chefs.value.filter(c => presentIds.includes(String(c.id)))
-        } else presentChefs.value = chefs.value 
-    } catch (e) { presentChefs.value = chefs.value }
+            const filtered = availableChefs.filter(c => presentIds.includes(String(c.id)))
+            presentChefs.value = filtered.length > 0 ? filtered : availableChefs
+        } else {
+            presentChefs.value = availableChefs
+        }
+    } catch (e) { 
+        presentChefs.value = availableChefs 
+    }
 
     try {
         const res = await fetch(`${API_BASE_URL}/activities/${currentActivity.value.id}/responsibles`, { headers: { 'Authorization': `Bearer ${userToken.value}` } })

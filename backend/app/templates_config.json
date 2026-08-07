@@ -1,0 +1,196 @@
+[
+  {
+    "name": "Week-end type (Samedi 14h - Dimanche 16h)",
+    "location": "Local / Base de camp",
+    "slots": [
+      {
+        "title": "Accueil",
+        "slot_type": "autre",
+        "day_offset": 0,
+        "start_time": "14:00",
+        "end_time": "14:15"
+      },
+      {
+        "title": "Installation tentes",
+        "slot_type": "service",
+        "day_offset": 0,
+        "start_time": "14:15",
+        "end_time": "15:15"
+      },
+      {
+        "title": "Grand Jeu de lancement",
+        "slot_type": "jeu",
+        "day_offset": 0,
+        "start_time": "15:15",
+        "end_time": "16:30"
+      },
+      {
+        "title": "Goûter",
+        "slot_type": "repas",
+        "day_offset": 0,
+        "start_time": "16:30",
+        "end_time": "17:00"
+      },
+      {
+        "title": "Préparation Repas du soir",
+        "slot_type": "service",
+        "day_offset": 0,
+        "start_time": "17:30",
+        "end_time": "19:00"
+      },
+      {
+        "title": "Dîner du soir",
+        "slot_type": "repas",
+        "day_offset": 0,
+        "start_time": "19:00",
+        "end_time": "20:00"
+      },
+      {
+        "title": "Vaisselle",
+        "slot_type": "service",
+        "day_offset": 0,
+        "start_time": "20:00",
+        "end_time": "20:45"
+      },
+      {
+        "title": "Veillée",
+        "slot_type": "jeu",
+        "day_offset": 0,
+        "start_time": "21:00",
+        "end_time": "22:30"
+      },
+      {
+        "title": "Cinquième & Coucher",
+        "slot_type": "autre",
+        "day_offset": 0,
+        "start_time": "23:00",
+        "end_time": "23:30"
+      },
+      {
+        "title": "Petit-déjeuner & Réveil",
+        "slot_type": "repas",
+        "day_offset": 1,
+        "start_time": "08:00",
+        "end_time": "09:00"
+      },
+      {
+        "title": "Rangement tentes & du camp",
+        "slot_type": "service",
+        "day_offset": 1,
+        "start_time": "09:00",
+        "end_time": "10:00"
+      },
+      {
+        "title": "Temps Spirituel",
+        "slot_type": "autre",
+        "day_offset": 1,
+        "start_time": "10:00",
+        "end_time": "10:30"
+      },
+      {
+        "title": "Point Pédagogique",
+        "slot_type": "autre",
+        "day_offset": 1,
+        "start_time": "10:30",
+        "end_time": "11:00"
+      },
+      {
+        "title": "Cuisine ",
+        "slot_type": "repas",
+        "day_offset": 1,
+        "start_time": "11:00",
+        "end_time": "12:15"
+      },
+      {
+        "title": "Déjeuner",
+        "slot_type": "repas",
+        "day_offset": 1,
+        "start_time": "12:15",
+        "end_time": "13:00"
+      },
+      {
+        "title": "Rangement & Vaisselle",
+        "slot_type": "service",
+        "day_offset": 1,
+        "start_time": "13:00",
+        "end_time": "13:45"
+      },
+      {
+        "title": "Grand Jeu de l'après-midi",
+        "slot_type": "jeu",
+        "day_offset": 1,
+        "start_time": "13:45",
+        "end_time": "15:00"
+      },
+      {
+        "title": "Goûter & Débrief du week-end",
+        "slot_type": "service",
+        "day_offset": 1,
+        "start_time": "15:00",
+        "end_time": "15:30"
+      },
+      {
+        "title": "Rassemblement & Départ",
+        "slot_type": "service",
+        "day_offset": 1,
+        "start_time": "15:30",
+        "end_time": "16:00"
+      }
+    ]
+  },
+  {
+    "name": "Journée type (09h - 16h)",
+    "location": "Local",
+    "slots": [
+      {
+        "title": "Rassemblement & Lancement",
+        "slot_type": "service",
+        "day_offset": 0,
+        "start_time": "09:00",
+        "end_time": "09:30"
+      },
+      {
+        "title": "Activité du matin",
+        "slot_type": "jeu",
+        "day_offset": 0,
+        "start_time": "09:30",
+        "end_time": "12:00"
+      },
+      {
+        "title": "Pique-nique",
+        "slot_type": "repas",
+        "day_offset": 0,
+        "start_time": "12:00",
+        "end_time": "13:00"
+      },
+      {
+        "title": "Temps calme",
+        "slot_type": "autre",
+        "day_offset": 0,
+        "start_time": "13:00",
+        "end_time": "13:30"
+      },
+      {
+        "title": "Grand Jeu de l'après-midi",
+        "slot_type": "jeu",
+        "day_offset": 0,
+        "start_time": "13:30",
+        "end_time": "15:00"
+      },
+      {
+        "title": "Goûter & Débrief",
+        "slot_type": "repas",
+        "day_offset": 0,
+        "start_time": "15:00",
+        "end_time": "15:30"
+      },
+      {
+        "title": "Rassemblement & Départ",
+        "slot_type": "service",
+        "day_offset": 0,
+        "start_time": "15:30",
+        "end_time": "16:00"
+      }
+    ]
+  }
+]
