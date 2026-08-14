@@ -1,6 +1,7 @@
 .venv/
 .env
 node_modules/
+dev-dist/
 certbot/
 __pycache__/
 *.pyc

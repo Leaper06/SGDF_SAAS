@@ -75,4 +75,4 @@ if __name__ == '__main__':
         seed_templates()
     except Exception as e:
         logging.warning(f"Impossible d'exécuter le seed des templates : {e}")
-    app.run(debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5001)

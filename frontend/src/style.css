@@ -2,29 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tu peux remettre tes règles pour cacher la scrollbar ici */
+/* Tu peux remettre tes rÃ¨gles pour cacher la scrollbar ici */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
 @media print {
-  /* Cacher tout ce qui a la classe no-print */
-  .no-print, nav, header, footer, button, .sidebar {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+  /* Cacher tout ce qui a la classe no-print ou print:hidden */
+  .no-print, .print\:hidden, nav, header, footer, button, .sidebar {
     display: none !important;
   }
   
-  /* Cacher le body principal */
-  body {
+  /* Ne PAS cacher le body ni #app, mais forcer le fond blanc et dimensions auto */
+  html, body, #app, main {
     background: white !important;
     color: black !important;
-    margin: 0;
-    padding: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Annuler toutes les classes Tailwind de limitation de hauteur ou de scroll */
+  .h-screen, .h-full, .w-screen, .overflow-hidden, .overflow-y-auto, .overflow-x-auto {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .break-inside-avoid, .print-step-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
   
-  /* Afficher uniquement le contenu imprimable */
-  body > * {
-    display: none !important;
-  }
-  
-  /* Si le modal est ouvert, on le montre et on l'�tale sur toute la page */
+  /* Si le modal est ouvert, on le montre et on l'étale sur toute la page */
   .printable-modal {
     display: block !important;
     position: absolute !important;
@@ -43,17 +69,18 @@
     background: white !important;
     height: auto !important;
     border-radius: 0 !important;
+    position: static !important;
   }
 
-  /* Style global pour la liste de courses */
-  h3 {
-    font-size: 24pt !important;
-    text-align: center;
+  /* Style spécifique pour le titre de la liste de courses en impression */
+  .printable-modal h3, .printable-content h3.shopping-title {
+    font-size: 20pt !important;
+    text-align: center !important;
     color: #5b2b82 !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 15px !important;
   }
   
-  /* Les sections de cat�gories (Epicerie, Frais, etc.) */
+  /* Les sections de catégories (Epicerie, Frais, etc.) */
   .category-section {
     page-break-inside: avoid;
     margin-bottom: 20px !important;
@@ -71,7 +98,7 @@
     margin-bottom: 10px;
   }
 
-  /* Grille des ingr�dients */
+  /* Grille des ingrédients */
   .ingredient-row {
     display: flex !important;
     justify-content: space-between !important;
@@ -79,7 +106,7 @@
     border-bottom: 1px dotted #ccc !important;
   }
 
-  /* Ajouter une case � cocher pour l'impression */
+  /* Ajouter une case à cocher pour l'impression */
   .ingredient-row::before {
     content: '?';
     font-size: 14pt;

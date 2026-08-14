@@ -52,6 +52,34 @@ def get_tents():
         return jsonify({"error": "Erreur serveur"}), 500
 
 
+@logistique_bp.route('/api/tents', methods=['POST'])
+def create_tent():
+    """
+    Ajoute une nouvelle tente au parc de tentes d'un groupe.
+    """
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    capacity = data.get('capacity', 4)
+    status = data.get('status', 'operationnelle')
+    group = data.get('group_name', 'SGDF')
+
+    if not name:
+        return jsonify({"error": "Le nom de la tente est obligatoire"}), 400
+
+    try:
+        db = get_db()
+        res = db.table('tents').insert({
+            'name': name,
+            'capacity': int(capacity),
+            'status': status,
+            'group_name': group
+        }).execute()
+        return jsonify({"status": "success", "data": res.data}), 201
+    except Exception as e:
+        logging.error(f"Erreur création tente : {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
 @logistique_bp.route('/api/camps/<camp_id>/tents', methods=['GET', 'POST'])
 def manage_camp_tents(camp_id):
     """

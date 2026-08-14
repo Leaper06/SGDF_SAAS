@@ -25,7 +25,6 @@ def login():
     db = get_db()
     mapping_res = db.table('chef_mappings').select('*').eq('email', username).execute()
     
-    session_token = str(uuid.uuid4())
     chef_adherent_id = None
     needs_identification = True 
     unit_id = None
@@ -41,6 +40,17 @@ def login():
         if unit_res.data:
             unit_id = unit_res.data[0]['id']
 
+    # Génération du token JWT Persistant (Valide 30 jours)
+    payload_data = {
+        "email": username,
+        "unit_name": unit_name,
+        "unit_id": unit_id,
+        "adherent_id": chef_adherent_id
+    }
+    from services.session_manager import create_jwt_token
+    session_token = create_jwt_token(payload_data)
+
+    # On garde la session HTTP en mémoire pour le scraping immédiat (si besoin)
     ACTIVE_SESSIONS[session_token] = {
         "http": session_http,
         "unit_name": unit_name,

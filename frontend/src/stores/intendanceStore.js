@@ -72,8 +72,18 @@ export const chargerCatalogueRecettes = async () => {
   // === INTERCEPTION MODE DÉMO ===
   if (isDemoMode.value) {
     recipesList.value = [
-      { id: 'demo-1', name: 'Pâtes Carbonara', type: 'Plat principal', is_vegetarian: false, is_fridge_free: false, is_wood_fire: true },
-      { id: 'demo-2', name: 'Salade de riz', type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false }
+      { id: 'demo-1', name: 'Pâtes Carbonara', dish_type: 'Plat principal', is_vegetarian: false, is_fridge_free: false, is_wood_fire: true },
+      { id: 'demo-2', name: 'Taboulé fait maison', dish_type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false },
+      { id: 'demo-3', name: 'Salade de riz complète', dish_type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false },
+      { id: 'demo-4', name: 'Chili con carne trappeur', dish_type: 'Plat principal', is_vegetarian: false, is_fridge_free: true, is_wood_fire: true },
+      { id: 'demo-5', name: 'Poulet au curry & Riz basmati', dish_type: 'Plat principal', is_vegetarian: false, is_fridge_free: false, is_wood_fire: true },
+      { id: 'demo-6', name: 'Gratin de pâtes au fromage', dish_type: 'Plat principal', is_vegetarian: true, is_fridge_free: false, is_wood_fire: false },
+      { id: 'demo-7', name: 'Salade de betteraves & noix', dish_type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false },
+      { id: 'demo-8', name: 'Crêpes party au feu de bois', dish_type: 'Dessert', is_vegetarian: true, is_fridge_free: true, is_wood_fire: true },
+      { id: 'demo-9', name: 'Yaourt & Salade de fruits frais', dish_type: 'Dessert', is_vegetarian: true, is_fridge_free: false, is_wood_fire: false },
+      { id: 'demo-10', name: 'Rose des sables croustillantes', dish_type: 'Dessert', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false },
+      { id: 'demo-11', name: 'Pain perdu au caramel', dish_type: 'Dessert', is_vegetarian: true, is_fridge_free: false, is_wood_fire: true },
+      { id: 'demo-12', name: 'Bruschetta tomate-basilic', dish_type: 'Entrée', is_vegetarian: true, is_fridge_free: true, is_wood_fire: false }
     ]
     return
   }
@@ -110,9 +120,9 @@ export const ouvrirMenuRepas = async (slot) => {
   // === INTERCEPTION MODE DÉMO ===
   if (isDemoMode.value) {
       currentMealRecipes.value = [
-          { id: 'demo-recette-1', name: 'Salade composée', type: 'Entrée' },
-          { id: 'demo-recette-2', name: 'Pâtes Carbonara', type: 'Plat principal' },
-          { id: 'demo-recette-3', name: 'Bananes', type: 'Dessert' }
+          { id: 'demo-recette-1', name: 'Taboulé fait maison', dish_type: 'Entrée' },
+          { id: 'demo-recette-2', name: 'Pâtes Carbonara', dish_type: 'Plat principal' },
+          { id: 'demo-recette-3', name: 'Bananes & Yaourt au miel', dish_type: 'Dessert' }
       ]
       router.push('/menu')
       return 
@@ -145,29 +155,56 @@ export const retirerRecette = async (index, recipe_id) => {
   } catch (error) { console.error("Erreur :", error) }
 }
 
-export const ajouterRecetteAuMenu = async (recipe) => {
+export const showRecipeDrawer = ref(false)
+
+export const ajouterRecetteAuMenu = async (recipe, redirect = true) => {
   // === INTERCEPTION MODE DÉMO ===
   if (isDemoMode.value) {
-    currentMealRecipes.value.push(recipe)
-    router.push('/menu')
-    return
+    if (!currentMealRecipes.value.some(r => r.id === recipe.id)) {
+      currentMealRecipes.value.push(recipe)
+    }
+    if (redirect) router.push('/menu')
+    return true
   }
   // =============================
-  if (!currentMeal.value) return
+  if (!currentMeal.value) return false
   const dejaPresent = currentMealRecipes.value.some(r => r.id === recipe.id)
   if (dejaPresent) {
-      alert("Cette recette est déjà dans votre menu !")
-      router.push('/menu') 
-      return 
+      if (redirect) {
+        alert("Cette recette est déjà dans votre menu !")
+        router.push('/menu') 
+      }
+      return false
   }
   try {
     const response = await fetch(`${API_BASE_URL}/meals/${currentMeal.value.id}/recipes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipe_id: recipe.id }) })
     const json = await response.json()
-    if (json.status === 'success') { currentMealRecipes.value.push(recipe); router.push('/menu') }
+    if (json.status === 'success') { 
+      currentMealRecipes.value.push(recipe)
+      if (redirect) router.push('/menu')
+      return true
+    }
   } catch (error) { console.error("Erreur :", error) }
+  return false
 }
 
-export const fermerMenuRepas = () => { selectedSlot.value = null; router.push('/planning') }
+export const ajouterRecetteInline = async (recipe) => {
+  return await ajouterRecetteAuMenu(recipe, false)
+}
+
+export const ajouterItemLibre = (nom, quantity = '', dishType = 'Accompagnement') => {
+  if (!nom.trim()) return
+  const itemLibre = {
+    id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    name: nom.trim(),
+    quantity: quantity ? quantity.trim() : '',
+    dish_type: dishType,
+    is_custom: true
+  }
+  currentMealRecipes.value.push(itemLibre)
+}
+
+export const fermerMenuRepas = () => { selectedSlot.value = null; showRecipeDrawer.value = false; router.push('/planning') }
 
 export const genererBordereau = async () => {
   // === INTERCEPTION MODE DÉMO ===
@@ -177,6 +214,17 @@ export const genererBordereau = async () => {
       { name: 'Lardons', qty: 500, unit: 'g', isChecked: false, category: 'Frais' },
       { name: 'Bananes', qty: 15, unit: 'pièces', isChecked: false, category: 'Fruits' }
     ]
+    // Ajout des articles libres
+    currentMealRecipes.value.filter(r => r.is_custom).forEach(custom => {
+      shoppingList.value.push({
+        name: custom.name,
+        qty: custom.quantity || '1',
+        unit: '',
+        isChecked: false,
+        category: 'Hors-catalogue / Ingrédients libres',
+        is_custom: true
+      })
+    })
     showShoppingModal.value = true
     return
   }
@@ -201,7 +249,21 @@ export const genererBordereau = async () => {
     const response = await fetch(`${API_BASE_URL}/meals/${currentMeal.value.id}/shopping-list?adults=${nbAdultesPresents}&children=${nbJeunesPresents}`, { headers: { 'Authorization': `Bearer ${userToken.value}` } })
     const json = await response.json()
     if (json.status === 'success') {
-      shoppingList.value = json.data.map(item => ({...item, isChecked: false}))
+      const baseList = json.data.map(item => ({...item, isChecked: false}))
+      
+      // Ajout des articles libres
+      currentMealRecipes.value.filter(r => r.is_custom).forEach(custom => {
+        baseList.push({
+          name: custom.name,
+          qty: custom.quantity || '1',
+          unit: '',
+          isChecked: false,
+          category: 'Hors-catalogue / Ingrédients libres',
+          is_custom: true
+        })
+      })
+      
+      shoppingList.value = baseList
       currentShoppingMealId.value = currentMeal.value.id 
       showShoppingModal.value = true
     }

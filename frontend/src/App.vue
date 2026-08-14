@@ -1,12 +1,16 @@
 <template>
   <div class="flex flex-col md:flex-row h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-300">
     
-    <!-- NavBar : En bas sur mobile (order-last), À GAUCHE sur ordi (md:order-first) -->
-    <NavBar class="order-last md:order-first shrink-0 z-40 relative" />
+    <!-- NavBar : En bas sur mobile (fixed), À GAUCHE sur ordi (md:order-first) -->
+    <NavBar class="order-last md:order-first shrink-0 z-40" />
 
-    <!-- Zone principale (qui contiendra l'Unité, la Logistique, etc.) -->
-    <main class="flex-1 relative min-w-0 overflow-hidden flex flex-col">
+    <!-- Zone principale (qui contiendra l'Unité, la Logistique, etc.) avec padding-bottom pour la navbar mobile -->
+    <main class="flex-1 relative min-w-0 overflow-hidden flex flex-col pb-16 md:pb-0">
+      <!-- Bannière de Statut réseau / Hors-Ligne -->
+      <NetworkStatusBanner />
       <router-view />
+      <!-- Pop-up Call to Action d'installation PWA -->
+      <PwaInstallPrompt />
     </main>
 
   </div>
@@ -17,7 +21,9 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 // --- Imports de base ---
-import NavBar from './components/NavBar.vue' // La fameuse NavBar !
+import NavBar from './components/NavBar.vue'
+import NetworkStatusBanner from './components/NetworkStatusBanner.vue'
+import PwaInstallPrompt from './components/PwaInstallPrompt.vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, logout } from './stores/authStore.js'
 
 // --- Imports Camps ---
@@ -45,29 +51,23 @@ const route = useRoute()
 const showExpiredAlert = ref(false)
 
 const handleSessionExpiration = () => {
-    // Si on est déjà sur la page login, on ignore
     if (route.name === 'login') return 
     showExpiredAlert.value = true
 }
 
 const forcerDeconnexion = () => {
     showExpiredAlert.value = false
-    // On mémorise la page où on se trouve pour y revenir plus tard
     localStorage.setItem('sgdf_redirect_after_login', route.fullPath)
-    logout() // On vide le token et on va vers /login
+    logout()
 }
 
 onMounted(() => {
-  // On écoute le signal d'alarme global
   window.addEventListener('session-expired', handleSessionExpiration)
-  
-  // Chargement des données initiales
   fetchCamps()
   chargerCatalogueRecettes()
 })
 
 onUnmounted(() => {
-  
   window.removeEventListener('session-expired', handleSessionExpiration)
 })
 </script>

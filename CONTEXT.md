@@ -76,3 +76,6 @@ CREATE TABLE public.camp_attendance ( id integer PRIMARY KEY, camp_id uuid REFER
 CREATE TABLE public.camp_locations ( id uuid PRIMARY KEY, name text, address text, contact_info text, description text, is_shared boolean, group_name text, latitude numeric, longitude numeric );
 CREATE TABLE public.favorite_links ( id uuid PRIMARY KEY, adherent_id text, name text, url text );
 CREATE TABLE public.unit_members ( adherent_id text PRIMARY KEY, unit_id uuid REFERENCES public.units(id), first_name text, last_name text, is_jeune boolean, is_chef boolean, last_synced_at timestamp );
+
+
+je ne veut aucun émojie mais des svg

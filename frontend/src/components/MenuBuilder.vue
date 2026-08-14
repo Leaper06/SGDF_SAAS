@@ -28,36 +28,60 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-colors">
                     <div class="flex items-center justify-between mb-4 border-b border-gray-50 dark:border-gray-700 pb-3 transition-colors">
                         <h3 class="font-bold text-gray-800 dark:text-white transition-colors">Composition du menu</h3>
+                        <button @click="showRecipeDrawer = true" class="text-xs font-bold text-[#5b2b82] dark:text-purple-400 hover:underline flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            <span>Ajouter</span>
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div v-for="(recipe, index) in currentMealRecipes" :key="recipe.id || index" class="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors">
-                            <div class="flex items-center gap-3">
-                                <div :class="['w-10 h-10 rounded-full flex items-center justify-center text-lg', getRecipeIcon(recipe.dish_type).bg, getRecipeIcon(recipe.dish_type).text]">
-                                    {{ getRecipeIcon(recipe.dish_type).emoji }}
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider transition-colors">{{ recipe.dish_type }}</p>
-                                    <p class="text-sm font-bold text-gray-900 dark:text-gray-200 transition-colors">{{ recipe.name }}</p>
+                    <div v-for="(recipes, catName) in categorizedMealRecipes" :key="catName">
+                        <div v-if="recipes.length > 0" class="mb-4">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
+                                <svg v-if="catName === 'Entrées'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                <svg v-else-if="catName === 'Desserts'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M3 21h18M3 10h18M3 7l9-4 9 4v3H3V7z" /></svg>
+                                <svg v-else-if="catName === 'Accompagnements & Extras'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /></svg>
+                                <span>{{ catName }}</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div v-for="recipe in recipes" :key="recipe.id || recipe._originalIndex" class="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-900/40 text-[#5b2b82] dark:text-purple-300 flex items-center justify-center shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-900 dark:text-gray-200">
+                                                {{ recipe.name }}
+                                                <span v-if="recipe.quantity" class="text-xs font-semibold text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded ml-1.5 border border-purple-100 dark:border-purple-800/40">
+                                                    {{ recipe.quantity }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button @click="retirerRecette(recipe._originalIndex, recipe.id)" class="p-2 text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
                                 </div>
                             </div>
-                            <button @click="retirerRecette(index, recipe.id)" class="p-2 text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
                         </div>
                     </div>
 
                     <div v-if="currentMealRecipes.length === 0" class="py-8 text-center bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 mt-2">
-                        <p class="text-sm text-gray-400 dark:text-gray-500 italic font-medium transition-colors">Ce menu est vide. Ajoute un plat !</p>
+                        <p class="text-sm text-gray-400 dark:text-gray-500 italic font-medium transition-colors">Ce menu est vide. Ajoute un plat ou un produit !</p>
                     </div>
 
-                    <button @click="$router.push('/recipes')" class="w-full mt-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:border-scoutViolet dark:hover:border-purple-400 hover:text-scoutViolet dark:hover:text-purple-400 hover:bg-violet-50 dark:hover:bg-purple-900/20 transition-colors flex justify-center items-center gap-2">
-                        <span class="text-lg leading-none">+</span> Ajouter un plat / Recette
+                    <button @click="showRecipeDrawer = true" class="w-full mt-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-3.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:border-scoutViolet dark:hover:border-purple-400 hover:text-scoutViolet dark:hover:text-purple-400 hover:bg-violet-50 dark:hover:bg-purple-900/20 transition-colors flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        <span>Ajouter un plat / Produit libre</span>
                     </button>
                 </div>
                 
                 <button @click="genererBordereau" class="w-full bg-[#5b2b82] dark:bg-purple-600 hover:bg-purple-900 dark:hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-md transition-all active:scale-95 text-sm flex justify-center items-center gap-2">
-                   Afficher la liste de courses
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
+                   <span>Afficher la liste de courses</span>
                 </button>
             </div>
         </div>
@@ -128,12 +152,42 @@
                 </div>
             </div>
         </transition>
+
+        <RecipeSelectDrawer />
     </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError } from '../stores/authStore.js'
 import { getTheme, formatHeure, formatTypeLabel, formatCourt, getRecipeIcon } from '../utils/helpers.js'
+import RecipeSelectDrawer from './RecipeSelectDrawer.vue'
+
+const categorizedMealRecipes = computed(() => {
+  const categories = {
+    'Entrées': [],
+    'Plats Principaux': [],
+    'Desserts': [],
+    'Accompagnements & Extras': []
+  }
+
+  currentMealRecipes.value.forEach((recipe, originalIndex) => {
+    const type = (recipe.dish_type || '').toLowerCase()
+    const itemWithIndex = { ...recipe, _originalIndex: originalIndex }
+    
+    if (type.includes('entrée') || type.includes('salade')) {
+      categories['Entrées'].push(itemWithIndex)
+    } else if (type.includes('dessert') || type.includes('fruit') || type.includes('yaourt') || type.includes('compote')) {
+      categories['Desserts'].push(itemWithIndex)
+    } else if (type.includes('accompagnement') || type.includes('pain') || type.includes('boisson') || type.includes('goûter')) {
+      categories['Accompagnements & Extras'].push(itemWithIndex)
+    } else {
+      categories['Plats Principaux'].push(itemWithIndex)
+    }
+  })
+
+  return categories
+})
 import { 
   selectedSlot, slotsList, showEditSlotModal, slotToEditId, editSlot, joursOuverts, 
   showAddSlotModal, newSlot, currentActivity, isEditingImaginaire, newMaterialName, 
@@ -149,7 +203,7 @@ import {
 
 import { 
   searchQuery, selectedFilter, recipesList, currentMeal, currentMealRecipes, newRecipe, 
-  shoppingList, showShoppingModal, rabEnabled, currentShoppingMealId, filteredRecipes, 
+  shoppingList, showShoppingModal, showRecipeDrawer, rabEnabled, currentShoppingMealId, filteredRecipes, 
   groupedShoppingList, chargerCatalogueRecettes, ouvrirEditeurRecette, ajouterIngredientRecette, 
   supprimerIngredientRecette, partagerRecette, ouvrirMenuRepas, retirerRecette, ajouterRecetteAuMenu, 
   fermerMenuRepas, genererBordereau, genererBordereauGlobal, fermerBordereau, exporterBordereauPDF 

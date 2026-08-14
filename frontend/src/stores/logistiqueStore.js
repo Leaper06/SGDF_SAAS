@@ -4,6 +4,81 @@ import { groupName, isDemoMode } from './authStore.js'
 import { supabase } from '../api/supabase.js'
 // --- VARIABLES ---
 export const damagedTents = ref([])
+export const allTents = ref([])
+export const showAddTentModal = ref(false)
+export const isSavingTent = ref(false)
+export const tentForm = ref({ name: '', capacity: 6, status: 'operationnelle' })
+
+export const fetchAllTents = async () => {
+    if (isDemoMode.value) {
+        allTents.value = [
+            { id: 't1', name: 'Tente Canadienne N°1', capacity: 6, status: 'operationnelle' },
+            { id: 't2', name: 'Tente Canadienne N°2', capacity: 6, status: 'operationnelle' },
+            { id: 't3', name: 'Tente Canadienne N°3', capacity: 6, status: 'abimee', notes_incident: 'Fermeture éclair coincée' },
+            { id: 't4', name: 'Tente Dôme N°4', capacity: 4, status: 'operationnelle' },
+            { id: 't5', name: 'Tente Mess Réflect', capacity: 15, status: 'operationnelle' }
+        ]
+        return
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/tents?group_name=${groupName.value}`)
+        const json = await response.json()
+        if (json.status === 'success') {
+            allTents.value = json.data
+        }
+    } catch (e) {
+        console.error("Erreur chargement parc tentes :", e)
+    }
+}
+
+export const ouvrirAjoutTente = () => {
+    tentForm.value = { name: '', capacity: 6, status: 'operationnelle' }
+    showAddTentModal.value = true
+}
+
+export const soumettreTente = async () => {
+    if (!tentForm.value.name.trim()) return alert("Le nom ou numéro de la tente est obligatoire.")
+    
+    if (isDemoMode.value) {
+        isSavingTent.value = true
+        setTimeout(() => {
+            allTents.value.push({
+                id: 'demo-tent-' + Date.now(),
+                name: tentForm.value.name,
+                capacity: parseInt(tentForm.value.capacity) || 4,
+                status: tentForm.value.status
+            })
+            showAddTentModal.value = false
+            isSavingTent.value = false
+        }, 300)
+        return
+    }
+
+    isSavingTent.value = true
+    try {
+        const response = await fetch(`${API_BASE_URL}/tents`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: tentForm.value.name,
+                capacity: parseInt(tentForm.value.capacity) || 4,
+                status: tentForm.value.status,
+                group_name: groupName.value
+            })
+        })
+        const json = await response.json()
+        if (json.status === 'success') {
+            showAddTentModal.value = false
+            await fetchAllTents()
+            await fetchDamagedTents()
+        }
+    } catch (e) {
+        alert("Erreur lors de l'enregistrement de la tente")
+    } finally {
+        isSavingTent.value = false
+    }
+}
+
 export const showIncidentModal = ref(false)
 export const incidentForm = ref({ tent_id: null, nom: '', etat: 'Endommagée', notes_incident: '' })
 export const locationForm = ref({
@@ -255,6 +330,32 @@ export const sauvegarderMaterielCamp = async (campId) => {
     } finally {
         isSavingMaterials.value = false
     }
+}
+
+export const ajouterMaterielsPlusieursAuCamp = async (campId, materialNames) => {
+    if (!campId || !materialNames || materialNames.length === 0) return 0
+    await fetchCampMaterials(campId)
+    
+    let addedCount = 0
+    materialNames.forEach(name => {
+        const cleanName = String(name).trim()
+        if (cleanName && !campMaterials.value.some(m => m.name.toLowerCase() === cleanName.toLowerCase())) {
+            campMaterials.value.push({
+                id: 'mat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: cleanName,
+                is_checked: false
+            })
+            addedCount++
+        }
+    })
+
+    if (addedCount > 0) {
+        if (!isDemoMode.value) {
+            await sauvegarderMaterielCamp(campId)
+        }
+        broadcastMaterials()
+    }
+    return addedCount
 }
 
 export const ajouterMaterielCamp = (campId) => {

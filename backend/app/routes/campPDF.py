@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, send_file, render_template
+# pyrefly: ignore [missing-import]
 from weasyprint import HTML
 import io
 import logging
@@ -186,7 +187,7 @@ def export_dossier_pdf(camp_id):
             })
 
             # 5a. Extraction des fiches d'activités (depuis le cache memory activities_map)
-            if slot.get('slot_type') in ['jeu', 'spi'] and act_id and act_id in activities_map:
+            if act_id and act_id in activities_map:
                 activity = activities_map[act_id]
                 etapes = activity.get('activity_steps', []) or []
                 etapes.sort(key=lambda x: x.get('order_index', 0))

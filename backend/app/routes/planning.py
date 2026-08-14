@@ -1,8 +1,39 @@
+import os
+import json
 import logging
 from flask import Blueprint, request, jsonify
 from database import get_db
 
 planning_bp = Blueprint('planning', __name__)
+
+SLOTS_RESP_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'slot_responsibles.json')
+
+def load_slot_responsibles():
+    if not os.path.exists(SLOTS_RESP_FILE):
+        return {}
+    try:
+        with open(SLOTS_RESP_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_slot_responsible(slot_id, responsible_names):
+    if not slot_id:
+        return
+    resps = load_slot_responsibles()
+    if isinstance(responsible_names, list):
+        resp_str = ", ".join([str(n).strip() for n in responsible_names if str(n).strip()])
+    else:
+        resp_str = str(responsible_names).strip() if responsible_names else ''
+        
+    if resp_str:
+        resps[str(slot_id)] = resp_str
+    elif str(slot_id) in resps:
+        del resps[str(slot_id)]
+        
+    os.makedirs(os.path.dirname(SLOTS_RESP_FILE), exist_ok=True)
+    with open(SLOTS_RESP_FILE, 'w', encoding='utf-8') as f:
+        json.dump(resps, f, ensure_ascii=False, indent=2)
 
 @planning_bp.route('/api/planning_slots', methods=['POST'])
 def create_planning_slot():
@@ -11,6 +42,7 @@ def create_planning_slot():
     """
     try:
         data = request.json
+        responsible_name = data.get("responsible_name")
         nouveau_creneau = {
             "camp_id": data.get("camp_id"),
             "title": data.get("title"),
@@ -20,6 +52,10 @@ def create_planning_slot():
         }
         
         response = get_db().table('planning_slots').insert(nouveau_creneau).execute()
+        if response.data and responsible_name:
+            slot_id = response.data[0]['id']
+            save_slot_responsible(slot_id, responsible_name)
+
         return jsonify({"status": "success", "data": response.data}), 201
 
     except Exception as e:
@@ -33,13 +69,23 @@ def get_camp_slots(camp_id):
     Récupère l'intégralité des créneaux d'un camp, triés chronologiquement.
     """
     try:
-        response = get_db().table('planning_slots') \
+        db = get_db()
+        response = db.table('planning_slots') \
             .select('*') \
             .eq('camp_id', camp_id) \
             .order('start_time', desc=False) \
             .execute()
             
-        return jsonify({"status": "success", "data": response.data}), 200
+        slots = response.data
+        resps = load_slot_responsibles()
+        for slot in slots:
+            slot_id_str = str(slot['id'])
+            if slot_id_str in resps:
+                slot['responsible_name'] = resps[slot_id_str]
+            else:
+                slot['responsible_name'] = slot.get('responsible_name', '')
+
+        return jsonify({"status": "success", "data": slots}), 200
 
     except Exception as e:
         logging.error(f"Erreur de récupération du planning : {e}")
@@ -53,6 +99,7 @@ def delete_planning_slot(slot_id):
     """
     try:
         response = get_db().table('planning_slots').delete().eq('id', slot_id).execute()
+        save_slot_responsible(slot_id, None)
         return jsonify({"status": "success", "data": response.data}), 200
     except Exception as e:
         logging.error(f"Erreur lors de la suppression du créneau : {e}")
@@ -74,6 +121,10 @@ def update_planning_slot(slot_id):
         }
         
         response = get_db().table('planning_slots').update(infos_maj).eq('id', slot_id).execute()
+        
+        if "responsible_name" in data:
+            save_slot_responsible(slot_id, data.get("responsible_name"))
+
         return jsonify({"status": "success", "data": response.data}), 200
 
     except Exception as e:

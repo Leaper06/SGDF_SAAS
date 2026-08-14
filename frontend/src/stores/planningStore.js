@@ -15,10 +15,12 @@ export const slotsList = ref([])
 // Formulaires et modales des créneaux
 export const showEditSlotModal = ref(false)
 export const slotToEditId = ref(null) 
-export const editSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '' })
+export const editSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '', responsible_name: '' })
 export const joursOuverts = ref({})
 export const showAddSlotModal = ref(false)
-export const newSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '' })
+export const newSlot = ref({ title: '', slot_type: 'service', selected_day: null, start_hour: '', end_hour: '', responsible_name: '' })
+export const selectedDayFilter = ref('Tous')
+export const viewMode = ref('grid') // 'grid' | 'timeline'
 
 // Fiche d'activité (imaginaire, étapes, matériel)
 export const currentActivity = ref({ id: null, imaginary_and_objectives: '', steps: [], materials: [] })
@@ -123,15 +125,34 @@ const reFetchActivity = async () => {
 export const fetchSlots = async (campId) => {
   // === INTERCEPTION MODE DÉMO ===
   if (isDemoMode.value) {
-    const baseDate = new Date(selectedCamp.value?.start_date || new Date())
-    const start1 = new Date(baseDate); start1.setHours(14, 30, 0)
-    const end1 = new Date(baseDate); end1.setHours(17, 0, 0)
-    const start2 = new Date(baseDate); start2.setHours(19, 0, 0)
-    const end2 = new Date(baseDate); end2.setHours(20, 30, 0)
+    const d1 = new Date(selectedCamp.value?.start_date || new Date())
+    const d2 = new Date(d1); d2.setDate(d2.getDate() + 1)
     
+    const makeSlot = (dateObj, hStart, mStart, hEnd, mEnd, title, type) => {
+      const s = new Date(dateObj); s.setHours(hStart, mStart, 0)
+      const e = new Date(dateObj); e.setHours(hEnd, mEnd, 0)
+      return { id: `demo-slot-${Date.now()}-${Math.random().toString(36).substring(2,6)}`, title, slot_type: type, start_time: s.toISOString(), end_time: e.toISOString() }
+    }
+
     slotsList.value = [
-      { id: 'demo-slot-1', title: 'Grand Jeu d\'approche', slot_type: 'jeu', start_time: start1.toISOString(), end_time: end1.toISOString() },
-      { id: 'demo-slot-2', title: 'Banquet & Concours cuisine', slot_type: 'repas', start_time: start2.toISOString(), end_time: end2.toISOString() }
+      // Samedi
+      makeSlot(d1, 14, 0, 14, 30, "Accueil & Rassemblement", "rassemblement"),
+      makeSlot(d1, 14, 30, 16, 0, "Montage des tentes & Installation", "service"),
+      makeSlot(d1, 16, 0, 16, 30, "Goûter & Lancement de l'Imaginaire", "service"),
+      makeSlot(d1, 16, 30, 18, 30, "Grand Jeu de piste en forêt", "jeu"),
+      makeSlot(d1, 18, 30, 19, 30, "Temps libre & Douches", "temps_libre"),
+      makeSlot(d1, 19, 30, 21, 0, "Dîner Trappeur & Concours Cuisine", "repas"),
+      makeSlot(d1, 21, 0, 22, 30, "Veillée autour du feu", "veillée"),
+      makeSlot(d1, 22, 30, 23, 0, "Extinction des feux & Coucher", "nuit"),
+
+      // Dimanche
+      makeSlot(d2, 8, 0, 9, 0, "Petit-Déjeuner & Réveil", "repas"),
+      makeSlot(d2, 9, 0, 9, 30, "Temps Spirituel & Réflexion", "temps_spirituel"),
+      makeSlot(d2, 9, 30, 11, 30, "Olympiades de Patrouille", "jeu"),
+      makeSlot(d2, 11, 30, 12, 0, "Rangement des affaires", "service"),
+      makeSlot(d2, 12, 0, 13, 30, "Déjeuner & Pique-Nique", "repas"),
+      makeSlot(d2, 13, 30, 15, 0, "Démontage du campement & Nettoyage", "service"),
+      makeSlot(d2, 15, 0, 16, 0, "Rassemblement de clôture & Départ", "rassemblement")
     ]
     return
   }
@@ -146,7 +167,7 @@ export const fetchSlots = async (campId) => {
 export const exporterPlanning = () => { alert("Bientôt : Export PDF") }
 
 export const ouvrirAjoutSlot = () => {
-  newSlot.value = { title: '', slot_type: 'service', selected_day: joursDuCamp.value[0], start_hour: '', end_hour: '' }
+  newSlot.value = { title: '', slot_type: 'service', selected_day: joursDuCamp.value[0], start_hour: '', end_hour: '', responsible_name: '' }
   showAddSlotModal.value = true
 }
 
@@ -167,7 +188,8 @@ export const soumettreSlot = async () => {
       title: newSlot.value.title,
       slot_type: newSlot.value.slot_type,
       start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString()
+      end_time: endDateTime.toISOString(),
+      responsible_name: newSlot.value.responsible_name || ''
     })
     fermerSlotModal()
     return
@@ -181,7 +203,14 @@ export const soumettreSlot = async () => {
     const endDateTime = new Date(baseDate); endDateTime.setHours(parseInt(endH), parseInt(endM), 0)
     if (endDateTime < startDateTime) endDateTime.setDate(endDateTime.getDate() + 1)
 
-    const payload = { camp_id: selectedCamp.value.id, title: newSlot.value.title, slot_type: newSlot.value.slot_type, start_time: startDateTime.toISOString(), end_time: endDateTime.toISOString() }
+    const payload = { 
+      camp_id: selectedCamp.value.id, 
+      title: newSlot.value.title, 
+      slot_type: newSlot.value.slot_type, 
+      start_time: startDateTime.toISOString(), 
+      end_time: endDateTime.toISOString(),
+      responsible_name: newSlot.value.responsible_name || ''
+    }
     const response = await fetch(`${API_BASE_URL}/planning_slots`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     const json = await response.json()
     if (json.status === 'success') { fermerSlotModal(); await fetchSlots(selectedCamp.value.id) }
@@ -204,7 +233,14 @@ export const modifierSlot = (slot) => {
       if (found) matchingDay = found
     }
   }
-  editSlot.value = { title: slot.title || '', slot_type: slot.slot_type || 'service', selected_day: matchingDay, start_hour: getHeureString(slot.start_time), end_hour: getHeureString(slot.end_time) }
+  editSlot.value = { 
+    title: slot.title || '', 
+    slot_type: slot.slot_type || 'service', 
+    selected_day: matchingDay, 
+    start_hour: getHeureString(slot.start_time), 
+    end_hour: getHeureString(slot.end_time),
+    responsible_name: slot.responsible_name || ''
+  }
   showEditSlotModal.value = true
 }
 
@@ -226,6 +262,7 @@ export const soumettreModificationSlot = async () => {
       slotsList.value[index].slot_type = editSlot.value.slot_type
       slotsList.value[index].start_time = startDateTime.toISOString()
       slotsList.value[index].end_time = endDateTime.toISOString()
+      slotsList.value[index].responsible_name = editSlot.value.responsible_name || ''
     }
     fermerEditSlotModal()
     return
@@ -239,11 +276,45 @@ export const soumettreModificationSlot = async () => {
     const endDateTime = new Date(baseDate); endDateTime.setHours(parseInt(endH), parseInt(endM), 0)
     if (endDateTime < startDateTime) endDateTime.setDate(endDateTime.getDate() + 1)
 
-    const payload = { title: editSlot.value.title, slot_type: editSlot.value.slot_type, start_time: startDateTime.toISOString(), end_time: endDateTime.toISOString() }
+    const payload = { 
+      title: editSlot.value.title, 
+      slot_type: editSlot.value.slot_type, 
+      start_time: startDateTime.toISOString(), 
+      end_time: endDateTime.toISOString(),
+      responsible_name: editSlot.value.responsible_name || ''
+    }
     const response = await fetch(`${API_BASE_URL}/planning_slots/${slotToEditId.value}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     const json = await response.json()
     if (json.status === 'success') { fermerEditSlotModal(); await fetchSlots(selectedCamp.value.id) }
   } catch (error) { console.error("Erreur :", error) }
+}
+
+export const decalerPlanning = (jourStr, minutesDelta = 15) => {
+  const targetSlots = slotsParJour.value[jourStr]
+  if (!targetSlots || targetSlots.length === 0) return
+  
+  targetSlots.forEach(slot => {
+    const s = new Date(slot.start_time)
+    const e = new Date(slot.end_time)
+    s.setMinutes(s.getMinutes() + minutesDelta)
+    e.setMinutes(e.getMinutes() + minutesDelta)
+    slot.start_time = s.toISOString()
+    slot.end_time = e.toISOString()
+    
+    if (!isDemoMode.value) {
+      fetch(`${API_BASE_URL}/planning_slots/${slot.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: slot.title,
+          slot_type: slot.slot_type,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          responsible_name: slot.responsible_name || ''
+        })
+      }).catch(err => console.error("Erreur décalage API :", err))
+    }
+  })
 }
 
 export const supprimerSlot = async (slotId) => {
@@ -345,6 +416,55 @@ export const ajouterEtape = () => {
   isAddingStep.value = false; editingStepIndex.value = null
 }
 
+export const injecterTrameType = (type) => {
+  if (!currentActivity.value) return
+  if (currentActivity.value.steps && currentActivity.value.steps.length > 0) {
+    if (!confirm("Injecter une trame type remplacera les étapes actuelles. Continuer ?")) return
+  }
+  
+  if (type === 'grand_jeu') {
+    currentActivity.value.imaginary_and_objectives = currentActivity.value.imaginary_and_objectives || "Grand Jeu d'Imaginaire Scout : Développer la cohésion d'équipe et l'esprit d'initiative à travers des épreuves variées."
+    currentActivity.value.steps = [
+      { id: Date.now() + 1, title: "Lancement Imaginaire & Saynète", description: "Mise en scène avec les chefs costumés pour plonger les jeunes dans l'univers du jeu.", duration_minutes: 15 },
+      { id: Date.now() + 2, title: "Explication des Règles & Équipes", description: "Présentation des consignes de sécurité, de la carte du terrain et distribution des rôles.", duration_minutes: 15 },
+      { id: Date.now() + 3, title: "Épreuves & Rotation sur les Postes", description: "Défis par patrouilles sur les différents ateliers du terrain (noeuds, pistage, agilité).", duration_minutes: 90 },
+      { id: Date.now() + 4, title: "Épreuve Finale & Chasse au Trésor", description: "Rassemblement de tous les indices pour la confrontation finale entre équipes.", duration_minutes: 30 },
+      { id: Date.now() + 5, title: "Débriefing, Rassemblement & Rangement", description: "Annonce de l'équipe gagnante, rangement du matériel et retour au calme.", duration_minutes: 15 }
+    ]
+  } else if (type === 'veillee') {
+    currentActivity.value.imaginary_and_objectives = currentActivity.value.imaginary_and_objectives || "Veillée Scout autour du feu : Développer l'expression artistique, l'écoute et terminer la journée dans un climat chaleureux."
+    currentActivity.value.steps = [
+      { id: Date.now() + 1, title: "Chant d'ouverture & Accueil", description: "Lancement du feu de veillée et chant d'accroche pour rassembler l'unité.", duration_minutes: 10 },
+      { id: Date.now() + 2, title: "Saynètes & Sketchs des Patrouilles", description: "Passage des petites scènes préparées par les équipes.", duration_minutes: 45 },
+      { id: Date.now() + 3, title: "Grand jeu d'ambiance / Chansons", description: "Bans, chants scouts à répondre et jeux de veillée dynamiques.", duration_minutes: 20 },
+      { id: Date.now() + 4, title: "Conte & Histoire de veillée", description: "Histoire calme racontée par les chefs pour amener le calme.", duration_minutes: 15 },
+      { id: Date.now() + 5, title: "Prière / Réflexion & Coucher", description: "Chant de prière scout (Prière du Scout ou Cantique des Patrouilles) puis départ silencieux vers les tentes.", duration_minutes: 10 }
+    ]
+  } else if (type === 'olympiades') {
+    currentActivity.value.imaginary_and_objectives = currentActivity.value.imaginary_and_objectives || "Olympiades d'Unité : Compétition sportive et technique amicale favorisant le dépassement de soi et l'entraide."
+    currentActivity.value.steps = [
+      { id: Date.now() + 1, title: "Rassemblement & Allumage de la Flamme", description: "Présentation des équipes, du cri de guerre et des arbitres.", duration_minutes: 10 },
+      { id: Date.now() + 2, title: "Rotation sur les Ateliers Olympiques", description: "Parcours du combattant, souque à la corde, tir à l'arc, froissartage express.", duration_minutes: 75 },
+      { id: Date.now() + 3, title: "Grande Finale d'Unité", description: "Ultime relais entre les capitaines de patrouille.", duration_minutes: 30 },
+      { id: Date.now() + 4, title: "Podiums & Remise des Medailles", description: "Cérémonie de remise des prix et félicitations à toutes les patrouilles.", duration_minutes: 15 }
+    ]
+  }
+}
+
+export const calculerDureeTotaleMinutes = () => {
+  if (!currentActivity.value || !currentActivity.value.steps) return 0
+  return currentActivity.value.steps.reduce((sum, s) => sum + (parseInt(s.duration_minutes) || 0), 0)
+}
+
+export const calculerHeureFinEstimee = () => {
+  if (!selectedSlot.value || !selectedSlot.value.start_time) return ''
+  const start = new Date(selectedSlot.value.start_time)
+  if (isNaN(start.getTime())) return ''
+  const duree = calculerDureeTotaleMinutes()
+  const end = new Date(start.getTime() + duree * 60000)
+  return end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
 // ==========================================
 // ACTIONS (Responsables & Invités)
 // ==========================================
@@ -393,6 +513,15 @@ export const sauvegarderResponsables = async () => {
         const data = await res.json()
         if (data.status === 'success') showResponsiblesModal.value = false
     } catch (e) { console.error(e) }
+}
+
+export const retirerChefPresent = async (chefId) => {
+    const strId = String(chefId)
+    const index = activityResponsibles.value.indexOf(strId)
+    if (index !== -1) {
+        activityResponsibles.value.splice(index, 1)
+        await sauvegarderResponsables()
+    }
 }
 
 export const chargerResponsablesActivite = async () => {
