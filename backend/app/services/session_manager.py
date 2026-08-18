@@ -5,7 +5,7 @@ from flask import request
 import logging
 
 # Clé secrète pour signer les JWT (en dur pour le moment si pas dans .env)
-JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-sgdf-key-for-dev")
+JWT_SECRET = os.getenv("JWT_SECRET", "very-secret-key-6-95--4-4zergqgfdgdfsgfd")
 
 # Stockage en mémoire pour garder le `requests.Session` (Intranet)
 ACTIVE_SESSIONS = {}

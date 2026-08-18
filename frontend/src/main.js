@@ -6,6 +6,11 @@ import App from './App.vue'
 import router from './router.js' 
 import { initTheme } from './stores/themeStore.js'
 
+import { registerSW } from 'virtual:pwa-register'
+
+// Enregistrement immédiat du Service Worker PWA
+registerSW({ immediate: true })
+
 // Restauration immédiate du thème (mode sombre/clair) au démarrage
 initTheme()
 

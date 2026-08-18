@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from flask import Blueprint, jsonify, request, send_file, render_template
 # pyrefly: ignore [missing-import]
 from weasyprint import HTML

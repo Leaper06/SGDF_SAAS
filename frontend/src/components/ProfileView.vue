@@ -52,23 +52,39 @@
           </div>
       </div>
 
-      <!-- SECTION : APPLICATION (NOUVEAU BLOC DISCRET) -->
+      <!-- SECTION : APPLICATION -->
       <div>
           <h4 class="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3 pl-2 transition-colors">Application</h4>
-          <router-link 
-              to="/mentions-legales" 
-              class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:border-gray-200 dark:hover:border-gray-700 transition-all group"
-          >
-              <div class="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-[#004267] dark:group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span class="font-bold text-gray-800 dark:text-gray-100 text-sm transition-colors">Mentions Légales & RGPD</span>
-              </div>
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-          </router-link>
+          <div class="space-y-2">
+            <button 
+                @click="ouvrirGuideInstallationPwa" 
+                class="w-full bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:border-gray-200 dark:hover:border-gray-700 transition-all group"
+            >
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-[#004267] dark:group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span class="font-bold text-gray-800 dark:text-gray-100 text-sm transition-colors">Installer l'application sur le téléphone</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+            <router-link 
+                to="/mentions-legales" 
+                class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between hover:border-gray-200 dark:hover:border-gray-700 transition-all group"
+            >
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-[#004267] dark:group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span class="font-bold text-gray-800 dark:text-gray-100 text-sm transition-colors">Mentions Légales & RGPD</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+            </router-link>
+          </div>
       </div>
 
       <!-- SECTION : MODÈLES ET TEMPLATES -->
@@ -287,6 +303,10 @@ import { API_BASE_URL } from '../api/config.js'
 
 const showManageTemplatesModal = ref(false)
 const activeTemplateTab = ref('planning')
+
+const ouvrirGuideInstallationPwa = () => {
+    window.dispatchEvent(new CustomEvent('open-pwa-guide'))
+}
 
 const ouvrirModaleGestionTemplates = () => {
     fetchTemplates()
