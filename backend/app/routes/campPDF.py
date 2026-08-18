@@ -1,7 +1,5 @@
 # pyrefly: ignore [missing-import]
 from flask import Blueprint, jsonify, request, send_file, render_template
-# pyrefly: ignore [missing-import]
-from weasyprint import HTML
 import io
 import logging
 from datetime import datetime
@@ -253,7 +251,11 @@ def export_dossier_pdf(camp_id):
         }
 
         rendered_html = render_template('export_weekend.html', **data_for_template)
-        pdf_file = HTML(string=rendered_html).write_pdf()
+        try:
+            from weasyprint import HTML
+            pdf_file = HTML(string=rendered_html).write_pdf()
+        except ImportError:
+            return jsonify({'status': 'error', 'message': 'WeasyPrint non disponible'}), 500
 
         nom_camp = camp.get('name', 'Sans_Nom').replace(' ', '_')
         return send_file(
