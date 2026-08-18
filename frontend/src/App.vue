@@ -2,10 +2,10 @@
   <div class="flex flex-col md:flex-row h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-300">
     
     <!-- NavBar : En bas sur mobile (fixed), À GAUCHE sur ordi (md:order-first) -->
-    <NavBar class="order-last md:order-first shrink-0 z-40" />
+    <NavBar v-if="!isAuthPage" class="order-last md:order-first shrink-0 z-40" />
 
-    <!-- Zone principale (qui contiendra l'Unité, la Logistique, etc.) avec padding-bottom pour la navbar mobile -->
-    <main class="flex-1 relative min-w-0 overflow-hidden flex flex-col pb-16 md:pb-0">
+    <!-- Zone principale (qui contiendra l'Unité, la Logistique, etc.) -->
+    <main :class="['flex-1 relative min-w-0 overflow-y-auto flex flex-col', !isAuthPage ? 'pb-16 md:pb-0' : '']">
       <!-- Bannière de Statut réseau / Hors-Ligne -->
       <NetworkStatusBanner />
       <router-view />
@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 // --- Imports de base ---
@@ -49,6 +49,7 @@ import {
 const router = useRouter()
 const route = useRoute()
 const showExpiredAlert = ref(false)
+const isAuthPage = computed(() => route.name === 'login')
 
 const handleSessionExpiration = () => {
     if (route.name === 'login') return 

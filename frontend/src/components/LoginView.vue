@@ -1,12 +1,12 @@
 <template>
     <!-- Conteneur principal : Fond gris sur PC pour faire ressortir la carte -->
-    <div class="flex flex-col md:flex-row h-full w-full bg-white dark:bg-gray-900 md:bg-gray-50 md:dark:bg-gray-900 transition-colors duration-300 md:items-center md:justify-center md:p-6 relative">
+    <div class="flex flex-col md:flex-row min-h-full w-full bg-white dark:bg-gray-900 md:bg-gray-50 md:dark:bg-gray-900 transition-colors duration-300 md:items-center md:justify-center p-4 md:p-6 overflow-y-auto">
         
-        <!-- La carte centrée sur PC (prend toute la place sur mobile) -->
-        <div class="flex flex-col md:flex-row w-full h-full md:h-auto md:max-h-[700px] md:max-w-4xl md:bg-white md:dark:bg-gray-800 md:shadow-2xl md:rounded-3xl overflow-hidden transition-colors">
+        <!-- La carte centrée sur PC -->
+        <div class="flex flex-col md:flex-row w-full h-full md:h-auto md:max-h-[700px] md:max-w-4xl md:bg-white md:dark:bg-gray-800 md:shadow-2xl md:rounded-3xl overflow-hidden transition-colors my-auto">
 
             <!-- BANDEAU BLEU SGDF (En haut sur mobile, à gauche sur PC) -->
-            <div class="bg-[#004267] dark:bg-[#002a42] h-[35%] md:h-auto md:w-1/2 rounded-b-[40px] md:rounded-none shadow-lg md:shadow-none flex flex-col items-center justify-center p-8 relative overflow-hidden shrink-0 transition-colors">
+            <div class="bg-[#004267] dark:bg-[#002a42] py-10 md:py-16 md:w-1/2 rounded-b-[40px] md:rounded-none shadow-lg md:shadow-none flex flex-col items-center justify-center p-8 relative overflow-hidden shrink-0 transition-colors">
                 <!-- Décorations d'arrière-plan -->
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-5 rounded-full"></div>
                 <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-white opacity-10 rounded-full"></div>
@@ -17,13 +17,13 @@
             </div>
 
             <!-- FORMULAIRE (En bas sur mobile, à droite sur PC) -->
-            <div class="flex-1 px-8 pt-10 pb-20 md:py-16 md:w-1/2 flex flex-col justify-center bg-white dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent transition-colors">
+            <div class="flex-1 px-6 pt-8 pb-10 md:py-16 md:w-1/2 flex flex-col justify-center bg-white dark:bg-gray-900 md:bg-transparent md:dark:bg-transparent transition-colors">
                 
                 <!-- Wrapper pour limiter la largeur des champs même à l'intérieur de la demi-carte -->
                 <div class="max-w-sm mx-auto w-full flex flex-col">
-                    <h2 class="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white mb-8 text-center transition-colors">Connexion Intranet</h2>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white mb-6 text-center transition-colors">Connexion Intranet</h2>
                     
-                    <div class="space-y-5">
+                    <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 transition-colors">Identifiant / Mail</label>
                             <input 
@@ -57,7 +57,7 @@
                     <button 
                         @click="handleLogin" 
                         :disabled="isLoggingIn"
-                        class="w-full mt-8 bg-[#004267] hover:bg-[#003B5C] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-xl transition-all shadow-md flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                        class="w-full mt-6 bg-[#004267] hover:bg-[#003B5C] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold text-lg py-3.5 rounded-xl transition-all shadow-md flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         <span v-if="!isLoggingIn">Se connecter</span>
                         <span v-else class="flex items-center gap-3">
@@ -67,7 +67,7 @@
                     </button>
 
                     <!-- SÉPARATEUR & BOUTON DÉMO -->
-                    <div class="relative mt-5 mb-5">
+                    <div class="relative mt-4 mb-4">
                         <div class="absolute inset-0 flex items-center">
                             <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
                         </div>
@@ -85,10 +85,10 @@
                         Essayer la version Démo
                     </button>
 
-                    <!-- MESSAGES D'ATTENTE -->
-                    <div class="h-16 mt-4">
+                    <!-- MESSAGES D'ATTENTE & MENTIONS LÉGALES -->
+                    <div class="mt-6 flex flex-col items-center gap-3">
                         <transition enter-active-class="transition-opacity duration-300" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition-opacity duration-300" leave-from-class="opacity-100" leave-to-class="opacity-0">
-                            <div v-if="isLoggingIn && !isDemoMode">
+                            <div v-if="isLoggingIn && !isDemoMode" class="min-h-[3rem]">
                                 <p class="text-center text-xs text-gray-400 dark:text-gray-500 italic animate-pulse transition-colors">
                                     Vérification auprès de l'intranet... (cela peut prendre quelques secondes) 
                                 </p>
@@ -97,20 +97,18 @@
                                 </p>
                             </div>
                         </transition>
+
+                        <router-link 
+                            to="/mentions-legales" 
+                            class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline transition-colors"
+                        >
+                            Mentions Légales & RGPD
+                        </router-link>
                     </div>
 
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="absolute bottom-4 w-full text-center z-50">
-      <router-link 
-        to="/mentions-legales" 
-        class="text-sm text-green-700 hover:text-green-500 transition-colors"
-      >
-        Mentions Légales & RGPD
-      </router-link>
     </div>
 </template>
 
