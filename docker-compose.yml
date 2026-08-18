@@ -19,9 +19,9 @@ services:
     container_name: polymaitrise_frontend
     ports:
       - "80:80"
-      -"443:443"
+      - "443:443"
     volumes:
-      - ./certbot/conf:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api         # On s'assure que l'API démarre en premier
     restart: unless-stopped
