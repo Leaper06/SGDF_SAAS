@@ -50,7 +50,7 @@
           </button>
           <button @click="showGuideModal = true; dismissIosBanner()" class="flex-1 py-2.5 text-xs font-bold text-[#004267] bg-white hover:bg-gray-100 rounded-xl transition-colors shadow-md flex items-center justify-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#e85d22]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-            Tuto (2 sec) 📱
+            Tuto (2 sec)
           </button>
         </div>
       </div>
@@ -90,7 +90,7 @@
             <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-2xl space-y-2 border border-gray-200 dark:border-gray-700 text-xs">
               <div v-if="isIOS" class="space-y-2 text-gray-800 dark:text-gray-200">
                 <div class="font-bold text-[#004267] dark:text-blue-400 flex items-center gap-1.5">
-                  📱 Sur iPhone / iPad (Safari) :
+                Sur iPhone / iPad (Safari) :
                 </div>
                 <ol class="list-decimal pl-4 space-y-2 leading-relaxed">
                   <li>Touchez l'icône <strong>Partager</strong> <span class="inline-block px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[11px]">⎋</span> en bas de Safari.</li>
@@ -100,7 +100,7 @@
               </div>
 
               <div v-else class="space-y-2 text-gray-800 dark:text-gray-200">
-                <div class="font-bold text-[#004267] dark:text-blue-400">📱 Sur Android / Chrome :</div>
+                <div class="font-bold text-[#004267] dark:text-blue-400">Sur Android / Chrome :</div>
                 <ol class="list-decimal pl-4 space-y-2 leading-relaxed">
                   <li>Ouvrez le menu du navigateur (les <strong>3 petits points ⋮</strong> en haut à droite).</li>
                   <li>Sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong> ou <strong>"Installer l'application"</strong>.</li>
