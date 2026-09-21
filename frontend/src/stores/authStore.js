@@ -69,9 +69,16 @@ export const loginToSGDF = async (username, password) => {
       body: JSON.stringify({ username, password })
     })
     
-    const json = await response.json()
+    let json = {}
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      json = await response.json()
+    } else {
+      loginError.value = "Le serveur de connexion ne répond pas correctement. Réessayez."
+      return
+    }
     
-  if (response.ok && json.token) {
+    if (response.ok && json.token) {
       userToken.value = json.token
       userEmail.value = json.email 
       needsIdentification.value = json.needs_identification 
