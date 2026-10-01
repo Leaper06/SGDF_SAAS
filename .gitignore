@@ -7,4 +7,6 @@ __pycache__/
 *.pyc
 scratch_*
 test_*.py
-backup_donnees_polymaitrise.sql
+backup_donnees_polymaitrise.sql
+# Réglages locaux Claude Code
+.claude/settings.local.json

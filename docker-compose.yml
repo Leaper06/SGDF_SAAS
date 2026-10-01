@@ -9,6 +9,16 @@ services:
     env_file:
       - .env        # Injecte automatiquement tes clés Supabase
     restart: unless-stopped # Le serveur redémarre tout seul si le PC redémarre
+    # Vérifie toutes les 30 s que l'API répond. Après 3 échecs, elle passe "unhealthy"
+    # et le service autoheal la redémarre (cas d'une API figée qui ne crashe pas).
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/status', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - autoheal=true
     networks:
       - scout-network
 
@@ -27,6 +37,17 @@ services:
     restart: unless-stopped
     networks:
       - scout-network
+
+  # 3. Le Médecin : redémarre automatiquement les conteneurs "unhealthy" portant le label autoheal=true
+  autoheal:
+    image: willfarrell/autoheal:1.2.0
+    container_name: polymaitrise_autoheal
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 
 # On crée un petit réseau virtuel fermé pour que les conteneurs communiquent entre eux
 networks:

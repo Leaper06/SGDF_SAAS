@@ -10,9 +10,11 @@ def get_sgdf_cookies(username: str, password: str) -> Optional[List[Dict]]:
     try:
         with sync_playwright() as p:
             
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(headless=True, timeout=15000)
             context = browser.new_context()
             page = context.new_page()
+            # Chaque action Playwright (navigation, saisie, clic) est limitée à 15 secondes
+            page.set_default_timeout(15000)
 
             logging.info("Navigation vers l'intranet SGDF...")
             page.goto("https://intranet.sgdf.fr/")

@@ -26,4 +26,4 @@ COPY . .
 EXPOSE 5000
 
 # 7. La commande pour lancer le serveur via Gunicorn
-CMD ["gunicorn", "--chdir", "app", "-w", "2", "--threads", "4", "--timeout", "60", "--max-requests", "500", "--max-requests-jitter", "50", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["gunicorn", "--chdir", "app", "-w", "2", "--threads", "8", "--timeout", "60", "--max-requests", "500", "--max-requests-jitter", "50", "-b", "0.0.0.0:5000", "main:app"]
