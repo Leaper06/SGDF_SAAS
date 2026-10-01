@@ -5,7 +5,7 @@ services:
       context: ./backend
     container_name: polymaitrise_api
     ports:
-      - "5000:5000" # Expose le port 5000 de ton PC
+      - "127.0.0.1:5000:5000" # Accessible uniquement depuis la machine (Nginx passe par le réseau Docker)
     env_file:
       - .env        # Injecte automatiquement tes clés Supabase
     restart: unless-stopped # Le serveur redémarre tout seul si le PC redémarre
