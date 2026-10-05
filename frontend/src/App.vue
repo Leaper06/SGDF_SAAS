@@ -27,7 +27,7 @@ import NavBar from './components/NavBar.vue'
 import NetworkStatusBanner from './components/NetworkStatusBanner.vue'
 import PwaInstallPrompt from './components/PwaInstallPrompt.vue'
 import ApiErrorToast from './components/ApiErrorToast.vue'
-import { userToken, loginToSGDF, isLoggingIn, loginError, logout } from './stores/authStore.js'
+import { userToken, loginToSGDF, isLoggingIn, loginError, logout, isDemoMode } from './stores/authStore.js'
 
 // --- Imports Camps ---
 import { 
@@ -56,8 +56,9 @@ const isAuthPage = computed(() => route.name === 'login')
 // Session expirée (réponse 401 de l'API) : retour à la connexion avec un message explicite,
 // plutôt que des écrans vides qui feraient croire que les données ont disparu
 const handleSessionExpiration = () => {
-    // Sans token, il n'y a pas de session à faire expirer (visiteur non connecté)
-    if (route.name === 'login' || !userToken.value) return
+    // Sans token, il n'y a pas de session à faire expirer (visiteur non connecté).
+    // En mode Démo, les données sont fictives : un refus de l'API ne doit pas faire sortir le visiteur.
+    if (route.name === 'login' || !userToken.value || isDemoMode.value) return
     localStorage.setItem('sgdf_redirect_after_login', route.fullPath)
     logout()
     loginError.value = 'Votre session a expiré, merci de vous reconnecter.'
