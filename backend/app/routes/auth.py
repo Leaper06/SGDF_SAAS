@@ -1,8 +1,9 @@
 import uuid
 from flask import Blueprint, request, jsonify
 from database import get_db
-from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session
+from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session, ServerBusyError
 from services.sgdf_adherents import scrape_liste_adherents
+from services.unit_members import save_unit_and_members
 from services.session_manager import ACTIVE_SESSIONS, get_user_session
 
 # On crée le "mini-routeur" pour l'authentification
@@ -14,7 +15,10 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    cookies = get_sgdf_cookies(username, password)
+    try:
+        cookies = get_sgdf_cookies(username, password)
+    except ServerBusyError:
+        return jsonify({"error": "Beaucoup de connexions en cours, réessayez dans une minute."}), 503
     if not cookies:
         return jsonify({"error": "Échec de l'authentification."}), 401
 
@@ -39,6 +43,12 @@ def login():
         unit_res = db.table('units').select('id').eq('name', unit_name).execute()
         if unit_res.data:
             unit_id = unit_res.data[0]['id']
+
+    # Première connexion d'une nouvelle unité : on l'enregistre avec ses membres dès maintenant
+    # (la liste vient d'être récupérée sur l'intranet), pour que le token contienne l'unité
+    raw_adherents = adherents_info.get("adherents", [])
+    if not unit_id and unit_name and unit_name != "Unité Inconnue" and len(raw_adherents) > 1:
+        unit_id = save_unit_and_members(unit_name, raw_adherents)
 
     # Génération du token JWT Persistant (Valide 30 jours)
     payload_data = {

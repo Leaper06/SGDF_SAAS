@@ -42,9 +42,9 @@ const jsonErrorResponse = (status, message) => new Response(
 const ensureJsonResponse = (response) => {
     const contentType = response.headers.get('content-type') || ''
     if (response.ok || contentType.includes('application/json')) return response
-    const message = response.status >= 500
-        ? 'Le serveur est momentanément indisponible. Réessayez dans un instant.'
-        : 'La requête n\'a pas pu aboutir.'
+    let message = 'La requête n\'a pas pu aboutir.'
+    if (response.status === 429) message = 'Trop de tentatives de connexion. Réessayez dans une minute.'
+    else if (response.status >= 500) message = 'Le serveur est momentanément indisponible. Réessayez dans un instant.'
     return jsonErrorResponse(response.status, message)
 }
 

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { API_BASE_URL } from '../api/config.js'
-import { userToken, logout, unitName, chefAdherentId, chefBranch, isDemoMode } from './authStore.js'
+import { userToken, logout, unitName, unitId, chefAdherentId, chefBranch, isDemoMode } from './authStore.js'
 import { separerNomPrenom } from '../utils/helpers.js'
 
 // --- VARIABLES (Mémoire) ---
@@ -148,13 +148,21 @@ export const syncAdherents = async (password = null) => {
             body: password ? JSON.stringify({ password }) : null
         })
         
-        if (response.status === 401) {
+        if (response.status === 428) {
             // Session Intranet expirée côté serveur, on demande le mot de passe
             showSyncModal.value = true
             return false
         }
         
         if (response.ok) {
+            // Première synchro d'une nouvelle unité : le serveur renvoie un token qui contient l'unité
+            const json = await response.json()
+            if (json.token) {
+                userToken.value = json.token
+                localStorage.setItem('sgdf_token', json.token)
+                unitId.value = json.unit_id
+                localStorage.setItem('sgdf_unit_id', json.unit_id)
+            }
             // Synchro réussie, on recharge les données depuis la base
             showSyncModal.value = false
             adherentsList.value = [] // Force le re-fetch

@@ -1,12 +1,35 @@
 import logging
+import threading
 import requests
 from typing import List, Dict, Optional
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
+# Chaque connexion lance un navigateur Chromium (~160 Mo de RAM). On limite le nombre de
+# navigateurs simultanés par processus Gunicorn pour qu'un afflux de connexions
+# (ex : le jour du lancement) ne sature pas la mémoire du serveur.
+MAX_CONCURRENT_BROWSERS = 4
+BROWSER_WAIT_SECONDS = 45
+_browser_slots = threading.BoundedSemaphore(MAX_CONCURRENT_BROWSERS)
+
+
+class ServerBusyError(Exception):
+    """Trop de connexions simultanées : aucun navigateur disponible à temps."""
+
+
 def get_sgdf_cookies(username: str, password: str) -> Optional[List[Dict]]:
     """
     Authentifie l'utilisateur via un navigateur headless et recupere les cookies de session.
+    Lève ServerBusyError si aucun navigateur ne se libère à temps.
     """
+    if not _browser_slots.acquire(timeout=BROWSER_WAIT_SECONDS):
+        raise ServerBusyError()
+    try:
+        return _login_with_browser(username, password)
+    finally:
+        _browser_slots.release()
+
+
+def _login_with_browser(username: str, password: str) -> Optional[List[Dict]]:
     try:
         with sync_playwright() as p:
             

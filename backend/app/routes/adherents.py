@@ -1,9 +1,8 @@
 import logging
-import re
-from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request, current_app, g
 from database import get_db
-from services.session_manager import get_user_session
+from services.session_manager import get_user_session, create_jwt_token, ACTIVE_SESSIONS
+from services.unit_members import save_unit_and_members
 from services.sgdf_adherents import scrape_liste_adherents
 from services.permissions import (
     login_required, forbidden, can_access_adherent, get_unit_adherent_ids, sign_upload_url,
@@ -16,6 +15,10 @@ adherents_bp = Blueprint('adherents', __name__)
 # Formats acceptés pour les fiches sanitaires (un fichier .html servi par notre domaine
 # permettrait d'exécuter du code dans le navigateur des autres chefs)
 ALLOWED_UPLOAD_EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.webp', '.heic'}
+
+# Code renvoyé quand la session INTRANET SGDF a expiré (le frontend redemande le mot de passe).
+# Différent de 401, réservé à la session de l'application (qui déconnecte l'utilisateur).
+INTRANET_LOGIN_REQUIRED = 428
 
 @adherents_bp.route('/api/adherents', methods=['GET'])
 def get_adherents():
@@ -83,12 +86,14 @@ def sync_adherents():
     
     # Si le serveur a redémarré (session_http = None) ou si l'utilisateur envoie un password
     if (not session_http or password) and password:
-        from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session
-        from services.session_manager import ACTIVE_SESSIONS
-        
-        cookies = get_sgdf_cookies(user_data["email"], password)
+        from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session, ServerBusyError
+
+        try:
+            cookies = get_sgdf_cookies(user_data["email"], password)
+        except ServerBusyError:
+            return jsonify({"error": "Beaucoup de connexions en cours, réessayez dans une minute."}), 503
         if not cookies:
-            return jsonify({"error": "Identifiants incorrects"}), 401
+            return jsonify({"error": "Identifiants incorrects"}), INTRANET_LOGIN_REQUIRED
             
         session_http = create_authenticated_session(cookies)
         
@@ -101,7 +106,7 @@ def sync_adherents():
             ACTIVE_SESSIONS[token]["http"] = session_http
             
     if not session_http:
-        return jsonify({"error": "Session expirée, veuillez fournir votre mot de passe"}), 401
+        return jsonify({"error": "Session expirée, veuillez fournir votre mot de passe"}), INTRANET_LOGIN_REQUIRED
         
     try:
         adherents_info = scrape_liste_adherents(session_http)
@@ -109,54 +114,30 @@ def sync_adherents():
         unit_name = adherents_info.get("unit_name")
         
         if not unit_name or len(raw_adherents) <= 1:
-            return jsonify({"error": "Aucun adhérent trouvé ou session expirée"}), 401
+            return jsonify({"error": "Aucun adhérent trouvé ou session expirée"}), INTRANET_LOGIN_REQUIRED
             
-        db = get_db()
-        
-        # 1. Vérifier si l'unité existe, sinon la créer
-        unit_res = db.table('units').select('id').eq('name', unit_name).execute()
-        if not unit_res.data:
-            unit_res = db.table('units').insert({'name': unit_name}).execute()
-            
-        if unit_res.data:
-            unit_id = unit_res.data[0]['id']
-            members_to_upsert = []
-            
-            for row in raw_adherents[1:]:
-                cols = [str(c).strip() for c in row if str(c).strip() != '']
-                if len(cols) < 2: continue
-                    
-                row_text = " ".join(cols)
-                is_jeune = bool(re.search(r'\b1\d{2}\b', row_text))
-                is_chef = bool(re.search(r'\b2\d{2}\b', row_text))
-                
-                raw_name = cols[0]
-                name_parts = raw_name.split(" ", 1)
-                last_name = name_parts[0]
-                first_name = name_parts[1] if len(name_parts) > 1 else ""
-                
-                members_to_upsert.append({
-                    "adherent_id": cols[1],
-                    "unit_id": unit_id,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "is_jeune": is_jeune,
-                    "is_chef": is_chef,
-                    "last_synced_at": datetime.now(timezone.utc).isoformat()
-                })
-            
-            if members_to_upsert:
-                db.table('unit_members').upsert(members_to_upsert).execute()
-                
-                # Mettre à jour la session utilisateur avec l'ID d'unité si manquant
-                if not user_data.get("unit_id"):
-                    user_data["unit_id"] = unit_id
+        unit_id = save_unit_and_members(unit_name, raw_adherents)
+        response = {"status": "success", "message": "Synchronisation réussie"}
 
-        return jsonify({"status": "success", "message": "Synchronisation réussie"}), 200
+        # Si le token ne connaissait pas encore l'unité (première synchro d'une nouvelle unité),
+        # on renvoie un nouveau token qui la contient, sinon les écrans resteraient vides
+        if unit_id and not user_data.get("unit_id"):
+            response["token"] = create_jwt_token({
+                "email": user_data.get("email"),
+                "unit_name": unit_name,
+                "unit_id": unit_id,
+                "adherent_id": user_data.get("adherent_id"),
+            })
+            response["unit_id"] = unit_id
+            # La session intranet gardée en mémoire suit le nouveau token
+            old_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+            ACTIVE_SESSIONS[response["token"]] = ACTIVE_SESSIONS.get(old_token, {"http": session_http})
+
+        return jsonify(response), 200
         
     except Exception as e:
         logging.error(f"Erreur scraping/mise en cache adhérents : {e}")
-        return jsonify({"error": "Erreur lors de la synchronisation (Session peut-être expirée)"}), 401
+        return jsonify({"error": "Erreur lors de la synchronisation (Session peut-être expirée)"}), INTRANET_LOGIN_REQUIRED
 
 @adherents_bp.route('/api/adherents/extras', methods=['GET'])
 @login_required
