@@ -407,6 +407,10 @@ const exporterDossierWeekEnd = async () => {
 
 const ouvrirGestionPresence = async () => {
   if (isDemoMode.value) {
+    // Données fictives : le registre reprend les membres de l'unité de démo
+    const versRegistre = (membre) => ({ adherent_id: membre.id, first_name: membre.prenom, last_name: membre.nom })
+    campChefs.value = chefs.value.map(versRegistre)
+    campJeunes.value = jeunes.value.map(versRegistre)
     showAttendanceModal.value = true
     selectedAdherents.value = ['demo-chef-loic', 'demo-jeune-1']
     return
