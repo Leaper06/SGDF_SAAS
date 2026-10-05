@@ -48,18 +48,16 @@ import {
 // --- Logique d'expiration de session ---
 const router = useRouter()
 const route = useRoute()
-const showExpiredAlert = ref(false)
 const isAuthPage = computed(() => route.name === 'login')
 
+// Session expirée (réponse 401 de l'API) : retour à la connexion avec un message explicite,
+// plutôt que des écrans vides qui feraient croire que les données ont disparu
 const handleSessionExpiration = () => {
-    if (route.name === 'login') return 
-    showExpiredAlert.value = true
-}
-
-const forcerDeconnexion = () => {
-    showExpiredAlert.value = false
+    // Sans token, il n'y a pas de session à faire expirer (visiteur non connecté)
+    if (route.name === 'login' || !userToken.value) return
     localStorage.setItem('sgdf_redirect_after_login', route.fullPath)
     logout()
+    loginError.value = 'Votre session a expiré, merci de vous reconnecter.'
 }
 
 onMounted(() => {

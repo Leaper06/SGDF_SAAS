@@ -46,6 +46,11 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Une nouvelle version s'active immédiatement, sans attendre la fermeture de tous les onglets
+        // (indispensable pour que les correctifs de sécurité atteignent les applis installées)
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
