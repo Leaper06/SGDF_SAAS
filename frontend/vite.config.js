@@ -54,16 +54,22 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/ootswgyhxcibuztlghcv\.supabase\.co\/.*/i,
+            // Données de l'API : réseau en priorité, cache de l'appareil si le réseau
+            // ne répond pas en 8 s ou est coupé (consultation hors-ligne au camp)
+            urlPattern: ({ url, request }) =>
+              request.method === 'GET' &&
+              url.pathname.startsWith('/api/') &&
+              url.pathname !== '/api/status',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'supabase-api-cache',
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 8,
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7
+                maxEntries: 300,
+                maxAgeSeconds: 60 * 60 * 24 * 14
               },
               cacheableResponse: {
-                statuses: [0, 200]
+                statuses: [200]
               }
             }
           }

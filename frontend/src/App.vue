@@ -11,6 +11,8 @@
       <router-view />
       <!-- Pop-up Call to Action d'installation PWA -->
       <PwaInstallPrompt />
+      <!-- Alerte quand une requête échoue (réseau faible, serveur indisponible) -->
+      <ApiErrorToast />
     </main>
 
   </div>
@@ -24,6 +26,7 @@ import { useRouter, useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import NetworkStatusBanner from './components/NetworkStatusBanner.vue'
 import PwaInstallPrompt from './components/PwaInstallPrompt.vue'
+import ApiErrorToast from './components/ApiErrorToast.vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, logout } from './stores/authStore.js'
 
 // --- Imports Camps ---

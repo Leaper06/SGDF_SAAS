@@ -128,6 +128,9 @@ export const logout = () => {
   localStorage.removeItem('sgdf_chef_id')      
   localStorage.removeItem('sgdf_chef_branch')
   localStorage.removeItem('sgdf_unit_id')
+
+  // Vide le cache hors-ligne : un autre chef pourrait se connecter sur le même appareil
+  if ('caches' in window) caches.delete('api-cache')
   
   router.push('/login')
 }
