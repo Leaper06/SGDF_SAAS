@@ -36,6 +36,7 @@ services:
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro # Fichiers de validation Let's Encrypt (certbot --webroot)
     depends_on:
       - api         # On s'assure que l'API démarre en premier
     restart: unless-stopped
