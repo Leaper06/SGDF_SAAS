@@ -1,8 +1,12 @@
 import os
 import json
 import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.permissions import (
+    login_required, forbidden, can_access_camp,
+    get_camp_id_of_slot, get_camp_id_of_activity,
+)
 
 planning_bp = Blueprint('planning', __name__)
 
@@ -36,12 +40,15 @@ def save_slot_responsible(slot_id, responsible_names):
         json.dump(resps, f, ensure_ascii=False, indent=2)
 
 @planning_bp.route('/api/planning_slots', methods=['POST'])
+@login_required
 def create_planning_slot():
     """
     Crée un nouveau créneau dans le planning d'un camp.
     """
     try:
         data = request.json
+        if not can_access_camp(g.user, data.get("camp_id")):
+            return forbidden()
         responsible_name = data.get("responsible_name")
         nouveau_creneau = {
             "camp_id": data.get("camp_id"),
@@ -64,10 +71,14 @@ def create_planning_slot():
 
 
 @planning_bp.route('/api/camps/<camp_id>/slots', methods=['GET'])
+@login_required
 def get_camp_slots(camp_id):
     """
     Récupère l'intégralité des créneaux d'un camp, triés chronologiquement.
     """
+    # Les modèles globaux sont consultables par tous (aperçu avant création d'un camp)
+    if not can_access_camp(g.user, camp_id, allow_global_template=True):
+        return forbidden()
     try:
         db = get_db()
         response = db.table('planning_slots') \
@@ -93,10 +104,13 @@ def get_camp_slots(camp_id):
 
 
 @planning_bp.route('/api/planning_slots/<slot_id>', methods=['DELETE'])
+@login_required
 def delete_planning_slot(slot_id):
     """
     Supprime un créneau spécifique du planning.
     """
+    if not can_access_camp(g.user, get_camp_id_of_slot(slot_id)):
+        return forbidden()
     try:
         response = get_db().table('planning_slots').delete().eq('id', slot_id).execute()
         save_slot_responsible(slot_id, None)
@@ -107,10 +121,13 @@ def delete_planning_slot(slot_id):
 
 
 @planning_bp.route('/api/planning_slots/<slot_id>', methods=['PUT'])
+@login_required
 def update_planning_slot(slot_id):
     """
     Met à jour les informations d'un créneau existant.
     """
+    if not can_access_camp(g.user, get_camp_id_of_slot(slot_id)):
+        return forbidden()
     try:
         data = request.json
         infos_maj = {
@@ -133,11 +150,14 @@ def update_planning_slot(slot_id):
 
 
 @planning_bp.route('/api/planning_slots/<slot_id>/activity', methods=['GET'])
+@login_required
 def get_activity(slot_id):
     """
     Charge la fiche détaillée d'une activité. 
     Si aucune activité n'est associée au créneau, une entité vide est générée et liée automatiquement.
     """
+    if not can_access_camp(g.user, get_camp_id_of_slot(slot_id)):
+        return forbidden()
     try:
         db = get_db()
         slot_res = db.table('planning_slots').select('*').eq('id', slot_id).execute()
@@ -170,11 +190,14 @@ def get_activity(slot_id):
 
 
 @planning_bp.route('/api/activities/<activity_id>', methods=['PUT'])
+@login_required
 def save_activity(activity_id):
     """
     Sauvegarde l'intégralité d'une fiche d'activité (imaginaire, matériel et étapes de déroulé).
     Opère par remplacement destructif sur les collections liées (matériel et étapes).
     """
+    if not can_access_camp(g.user, get_camp_id_of_activity(activity_id)):
+        return forbidden()
     try:
         db = get_db()
         data = request.json
@@ -211,10 +234,13 @@ def save_activity(activity_id):
 
 
 @planning_bp.route('/api/activities/<activity_id>/responsibles', methods=['GET', 'POST'])
+@login_required
 def manage_activity_responsibles(activity_id):
     """
     Gère l'assignation des chefs responsables pour une activité donnée.
     """
+    if not can_access_camp(g.user, get_camp_id_of_activity(activity_id)):
+        return forbidden()
     db = get_db()
     
     if request.method == 'GET':

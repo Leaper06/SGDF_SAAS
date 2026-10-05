@@ -12,6 +12,17 @@ window.fetch = async (...args) => {
 
     // On ne surveille QUE les requêtes vers notre API (pour ne pas bloquer OpenStreetMap)
     if (typeof resource === 'string' && resource.startsWith(API_BASE_URL)) {
+        // Ajout automatique du token de session sur toutes les requêtes vers l'API
+        const token = localStorage.getItem('sgdf_token')
+        if (token) {
+            const options = args[1] || {}
+            const headers = new Headers(options.headers || {})
+            if (!headers.has('Authorization')) {
+                headers.set('Authorization', `Bearer ${token}`)
+            }
+            args[1] = { ...options, headers }
+        }
+
         const response = await originalFetch(...args)
         
         // Si le serveur refuse l'accès (Token expiré ou invalide)

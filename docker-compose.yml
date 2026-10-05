@@ -8,6 +8,10 @@ services:
       - "127.0.0.1:5000:5000" # Accessible uniquement depuis la machine (Nginx passe par le réseau Docker)
     env_file:
       - .env        # Injecte automatiquement tes clés Supabase
+    # Fichiers uploadés (fiches sanitaires) et données locales : conservés entre deux déploiements
+    volumes:
+      - api_uploads:/app/app/uploads
+      - api_data:/app/app/data
     restart: unless-stopped # Le serveur redémarre tout seul si le PC redémarre
     # Vérifie toutes les 30 s que l'API répond. Après 3 échecs, elle passe "unhealthy"
     # et le service autoheal la redémarre (cas d'une API figée qui ne crashe pas).
@@ -53,3 +57,8 @@ services:
 networks:
   scout-network:
     driver: bridge
+
+# Volumes persistants (survivent à la reconstruction des conteneurs)
+volumes:
+  api_uploads:
+  api_data:

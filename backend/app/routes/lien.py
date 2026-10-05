@@ -1,14 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db 
+from services.permissions import login_required, forbidden, get_user_adherent_id
 import logging
 
 liens_bp = Blueprint('liens', __name__)
 
 @liens_bp.route('/api/chef/<adherent_id>/links', methods=['GET'])
+@login_required
 def get_links(adherent_id):
     """
     Récupère les liens favoris d'un chef spécifique via son adherent_id
     """
+    if str(adherent_id) != get_user_adherent_id(g.user):
+        return forbidden()
     try:
         db = get_db()
         
@@ -23,12 +27,13 @@ def get_links(adherent_id):
 
 
 @liens_bp.route('/api/chef/<adherent_id>/links', methods=['POST', 'OPTIONS'])
+@login_required
 def add_link(adherent_id):
     """
     Ajoute un nouveau lien favori pour un chef spécifique
     """
-    if request.method == 'OPTIONS':
-        return '', 200
+    if str(adherent_id) != get_user_adherent_id(g.user):
+        return forbidden()
         
     data = request.json or {}
     
@@ -54,17 +59,16 @@ def add_link(adherent_id):
 
 
 @liens_bp.route('/api/links/<link_id>', methods=['DELETE', 'OPTIONS'])
+@login_required
 def delete_link(link_id):
     """
-    Supprime un lien favori spécifique grâce à son UUID
+    Supprime un lien favori du chef connecté grâce à son UUID
     """
-    if request.method == 'OPTIONS':
-        return '', 200
-        
     try:
         db = get_db()
-        
-        db.table('favorite_links').delete().eq('id', link_id).execute()
+
+        # Le filtre sur adherent_id empêche de supprimer le lien d'un autre chef
+        db.table('favorite_links').delete().eq('id', link_id).eq('adherent_id', get_user_adherent_id(g.user)).execute()
         
         return jsonify({"status": "success"}), 200
         

@@ -3,9 +3,15 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from flask import request
 import logging
+from dotenv import load_dotenv
 
-# Clé secrète pour signer les JWT (en dur pour le moment si pas dans .env)
-JWT_SECRET = os.getenv("JWT_SECRET", "very-secret-key-6-95--4-4zergqgfdgdfsgfd")
+load_dotenv()
+
+# Clé secrète pour signer les JWT. Obligatoire : sans elle, n'importe qui pourrait
+# fabriquer un token valide. Générer avec : python -c "import secrets; print(secrets.token_hex(32))"
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise ValueError("Variable d'environnement JWT_SECRET manquante (voir .env)")
 
 # Stockage en mémoire pour garder le `requests.Session` (Intranet)
 ACTIVE_SESSIONS = {}

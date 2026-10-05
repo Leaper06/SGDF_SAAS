@@ -1,20 +1,33 @@
 import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.permissions import (
+    login_required, forbidden, can_access_camp, can_access_tent, get_group_name,
+)
 
 logistique_bp = Blueprint('logistique', __name__)
 
+
+def can_use_material_template(template_id) -> bool:
+    """Un modèle de matériel est utilisable s'il est global ou propre à l'unité."""
+    res = get_db().table('material_templates').select('unit_id').eq('id', template_id).execute()
+    if not res.data:
+        return False
+    unit_id = res.data[0].get('unit_id')
+    return unit_id is None or unit_id == g.user.get("unit_id")
+
 @logistique_bp.route('/api/tents', methods=['GET'])
+@login_required
 def get_tents():
     """
     Récupère le catalogue des tentes d'un groupe.
     Filtre automatiquement les tentes déjà réservées si un camp_id est fourni.
     """
-    group_name = request.args.get('group_name')
+    group_name = get_group_name(g.user)
     camp_id = request.args.get('camp_id')
-    
-    if not group_name:
-        return jsonify({"error": "Nom de groupe manquant"}), 400
+
+    if camp_id and camp_id != 'undefined' and not can_access_camp(g.user, camp_id):
+        return forbidden()
 
     try:
         db = get_db()
@@ -53,6 +66,7 @@ def get_tents():
 
 
 @logistique_bp.route('/api/tents', methods=['POST'])
+@login_required
 def create_tent():
     """
     Ajoute une nouvelle tente au parc de tentes d'un groupe.
@@ -61,7 +75,7 @@ def create_tent():
     name = data.get('name', '').strip()
     capacity = data.get('capacity', 4)
     status = data.get('status', 'operationnelle')
-    group = data.get('group_name', 'SGDF')
+    group = get_group_name(g.user)
 
     if not name:
         return jsonify({"error": "Le nom de la tente est obligatoire"}), 400
@@ -81,10 +95,13 @@ def create_tent():
 
 
 @logistique_bp.route('/api/camps/<camp_id>/tents', methods=['GET', 'POST'])
+@login_required
 def manage_camp_tents(camp_id):
     """
     Gère la sélection des tentes pour un camp spécifique.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     db = get_db()
     
     if request.method == 'GET':
@@ -95,7 +112,12 @@ def manage_camp_tents(camp_id):
     if request.method == 'POST':
         data = request.json
         selected_tents = data.get('tents', [])
-        
+
+        # On ne garde que les tentes du groupe de l'utilisateur
+        group_tents = db.table('tents').select('id').eq('group_name', get_group_name(g.user)).execute()
+        group_tent_ids = {t['id'] for t in group_tents.data}
+        selected_tents = [t_id for t_id in selected_tents if t_id in group_tent_ids]
+
         db.table('camp_tents').delete().eq('camp_id', camp_id).execute()
         inserts = [{"camp_id": camp_id, "tent_id": t_id} for t_id in selected_tents]
         if inserts:
@@ -105,6 +127,7 @@ def manage_camp_tents(camp_id):
 
 
 @logistique_bp.route('/api/incidents', methods=['GET', 'POST'])
+@login_required
 def manage_incidents():
     """
     Gère la déclaration et le suivi du matériel abîmé.
@@ -112,13 +135,17 @@ def manage_incidents():
     db = get_db()
     
     if request.method == 'GET':
-        res = db.table('tent_incidents').select('*, tents(name)').eq('status', 'a_reparer').execute()
-        return jsonify({"status": "success", "data": res.data}), 200
+        res = db.table('tent_incidents').select('*, tents(name, group_name)').eq('status', 'a_reparer').execute()
+        group_name = get_group_name(g.user)
+        incidents = [i for i in res.data if (i.get('tents') or {}).get('group_name') == group_name]
+        return jsonify({"status": "success", "data": incidents}), 200
         
     if request.method == 'POST':
         data = request.json
         tent_id = data.get('tent_id')
-        
+        if not can_access_tent(g.user, tent_id):
+            return forbidden()
+
         db.table('tent_incidents').insert({
             "tent_id": tent_id,
             "camp_id": data.get('camp_id'),
@@ -130,10 +157,13 @@ def manage_incidents():
 
 
 @logistique_bp.route('/api/camps/<camp_id>/attendance', methods=['GET', 'POST'])
+@login_required
 def manage_attendance(camp_id):
     """
     Gère le registre de présence (jeunes et maîtrise) pour un camp.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     db = get_db()
     
     if request.method == 'GET':
@@ -158,12 +188,15 @@ def manage_attendance(camp_id):
 # ==========================================
 
 @logistique_bp.route('/api/camps/<camp_id>/materials', methods=['GET', 'POST'])
+@login_required
 def manage_camp_materials(camp_id):
     """
     Gère la checklist de matériel à emporter pour un camp.
     GET: retourne la liste des éléments.
     POST: met à jour la liste des éléments (remplacement / upsert).
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     db = get_db()
     
     if request.method == 'GET':
@@ -200,6 +233,7 @@ def manage_camp_materials(camp_id):
 
 
 @logistique_bp.route('/api/material_templates', methods=['GET', 'POST'])
+@login_required
 def manage_material_templates():
     """
     GET: Récupère la liste des modèles de matériel.
@@ -209,7 +243,14 @@ def manage_material_templates():
     
     if request.method == 'GET':
         try:
-            res = db.table('material_templates').select('*').execute()
+            # Modèles globaux (sans unité) + modèles de l'unité
+            unit_id = g.user.get("unit_id")
+            query = db.table('material_templates').select('*')
+            if unit_id:
+                query = query.or_(f'unit_id.is.null,unit_id.eq.{unit_id}')
+            else:
+                query = query.is_('unit_id', 'null')
+            res = query.execute()
             return jsonify({"status": "success", "data": res.data or []}), 200
         except Exception as e:
             logging.error(f"Erreur GET material templates : {e}")
@@ -220,7 +261,7 @@ def manage_material_templates():
             data = request.json
             tmpl_name = data.get('name', 'Nouveau modèle matériel')
             items = data.get('items', []) # Liste de noms de matériels ex: ["Malle pharma", "Bâche"]
-            unit_id = data.get('unit_id')
+            unit_id = g.user.get("unit_id")
             
             new_tmpl = {
                 "name": tmpl_name,
@@ -236,10 +277,13 @@ def manage_material_templates():
 
 
 @logistique_bp.route('/api/camps/<camp_id>/materials/apply-template', methods=['POST'])
+@login_required
 def apply_material_template(camp_id):
     """
     Injecte les éléments d'un modèle de matériel dans la checklist d'un camp.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     db = get_db()
     try:
         data = request.json
@@ -247,6 +291,8 @@ def apply_material_template(camp_id):
         
         if not template_id:
             return jsonify({"error": "template_id requis"}), 400
+        if not can_use_material_template(template_id):
+            return forbidden()
             
         tmpl_res = db.table('material_templates').select('*').eq('id', template_id).execute()
         if not tmpl_res.data:
@@ -272,13 +318,17 @@ def apply_material_template(camp_id):
 
 
 @logistique_bp.route('/api/material_templates/<template_id>', methods=['DELETE'])
+@login_required
 def delete_material_template(template_id):
     """
-    Supprime un modèle de matériel par son ID.
+    Supprime un modèle de matériel de l'unité (les modèles globaux ne sont pas supprimables).
     """
+    unit_id = g.user.get("unit_id")
+    if not unit_id:
+        return forbidden()
     try:
         db = get_db()
-        db.table('material_templates').delete().eq('id', template_id).execute()
+        db.table('material_templates').delete().eq('id', template_id).eq('unit_id', unit_id).execute()
         return jsonify({"status": "success", "message": "Modèle matériel supprimé avec succès"}), 200
     except Exception as e:
         logging.error(f"Erreur suppression modèle matériel : {e}")

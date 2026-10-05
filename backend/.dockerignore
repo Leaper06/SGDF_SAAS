@@ -1,0 +1,8 @@
+# Données d'exécution : stockées dans des volumes Docker, jamais dans l'image
+app/uploads/
+app/data/
+# Fichiers de développement
+.venv/
+**/__pycache__/
+*.pyc
+.env

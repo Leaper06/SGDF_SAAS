@@ -77,6 +77,12 @@ def identify_chef():
         
     data = request.json
     adherent_id = data.get('adherent_id')
+
+    # Un chef ne peut s'identifier qu'à un membre de sa propre unité
+    from services.permissions import can_access_adherent
+    if not can_access_adherent(user_data, adherent_id):
+        return jsonify({"error": "Adhérent hors de votre unité"}), 403
+
     email = user_data['email']
     unit_name = user_data['unit_name']
 

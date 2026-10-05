@@ -1,7 +1,11 @@
 import math
 import logging
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.permissions import (
+    login_required, forbidden, can_access_camp,
+    get_camp_id_of_slot, get_camp_id_of_meal,
+)
 
 intendance_bp = Blueprint('intendance', __name__)
 
@@ -20,6 +24,7 @@ def get_recipes():
 
 
 @intendance_bp.route('/api/recipes', methods=['POST'])
+@login_required
 def create_recipe():
     """
     Crée une nouvelle recette et l'ensemble de ses ingrédients associés avec leurs grammages.
@@ -73,11 +78,14 @@ def create_recipe():
 
 
 @intendance_bp.route('/api/planning_slots/<slot_id>/meal', methods=['GET'])
+@login_required
 def get_slot_meal(slot_id):
     """
     Récupère le repas associé à un créneau de type 'repas'.
     Initialise une nouvelle entité 'meal' silencieusement si elle n'existe pas encore.
     """
+    if not can_access_camp(g.user, get_camp_id_of_slot(slot_id)):
+        return forbidden()
     try:
         db = get_db()
         meal_res = db.table('meals').select('*').eq('planning_slot_id', slot_id).execute()
@@ -114,10 +122,13 @@ def get_slot_meal(slot_id):
 
 
 @intendance_bp.route('/api/meals/<meal_id>/recipes', methods=['POST'])
+@login_required
 def add_recipe_to_meal(meal_id):
     """
     Associe une recette existante à un repas planifié.
     """
+    if not can_access_camp(g.user, get_camp_id_of_meal(meal_id)):
+        return forbidden()
     try:
         db = get_db()
         data = request.json
@@ -139,10 +150,13 @@ def add_recipe_to_meal(meal_id):
 
 
 @intendance_bp.route('/api/meals/<meal_id>/recipes/<recipe_id>', methods=['DELETE'])
+@login_required
 def remove_recipe_from_meal(meal_id, recipe_id):
     """
     Supprime l'association entre une recette et un repas planifié.
     """
+    if not can_access_camp(g.user, get_camp_id_of_meal(meal_id)):
+        return forbidden()
     try:
         db = get_db()
         db.table('meal_recipes').delete().eq('meal_id', meal_id).eq('recipe_id', recipe_id).execute()
@@ -154,10 +168,13 @@ def remove_recipe_from_meal(meal_id, recipe_id):
 
 
 @intendance_bp.route('/api/meals/<meal_id>/shopping-list', methods=['GET'])
+@login_required
 def get_shopping_list(meal_id):
     """
     Calcule la liste de courses consolidée pour un repas spécifique.
     """
+    if not can_access_camp(g.user, get_camp_id_of_meal(meal_id)):
+        return forbidden()
     try:
         db = get_db()
         adults = int(request.args.get('adults', 17))
@@ -209,10 +226,13 @@ def get_shopping_list(meal_id):
     
 
 @intendance_bp.route('/api/camps/<camp_id>/shopping-list', methods=['GET'])
+@login_required
 def get_camp_shopping_list(camp_id):
     """
     Calcule la liste de courses globale consolidée pour l'ensemble des repas d'un week-end.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     try:
         db = get_db()
         adults = int(request.args.get('adults', 0))

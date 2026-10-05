@@ -1,9 +1,10 @@
 # pyrefly: ignore [missing-import]
-from flask import Blueprint, jsonify, request, send_file, render_template
+from flask import Blueprint, jsonify, request, send_file, render_template, g
 import io
 import logging
 from datetime import datetime
 from database import get_db
+from services.permissions import login_required, forbidden, can_access_camp
 
 campPDF_bp = Blueprint('campPDF', __name__)
 
@@ -16,7 +17,10 @@ def parse_iso_dt(dt_str):
         return datetime.now()
 
 @campPDF_bp.route('/api/camps/<camp_id>/export-dossier', methods=['GET'])
+@login_required
 def export_dossier_pdf(camp_id):
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     try:
         db = get_db()
         

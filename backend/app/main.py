@@ -1,8 +1,7 @@
 import os
 import logging
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonify, send_from_directory, request, abort
 from flask_cors import CORS
-from werkzeug.utils import secure_filename
 
 
 
@@ -17,6 +16,7 @@ from routes.tents import tents_bp
 from routes.locations import locations_bp
 from routes.lien import liens_bp
 from routes.campPDF import campPDF_bp
+from services.permissions import is_valid_upload_signature
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -48,26 +48,18 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    """Gère l'upload de fichiers (photos de profil, etc.)."""
-    if 'file' not in request.files:
-        return jsonify({"error": "Aucun fichier envoyé"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "Nom de fichier vide"}), 400
-        
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-    
-    file_url = f"/uploads/{filename}"
-    return jsonify({"status": "success", "url": file_url}), 200
-
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    """Sert les fichiers statiques uploadés."""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    """
+    Sert un fichier uploadé (fiche sanitaire, photo) uniquement via un lien signé
+    et non expiré, distribué par l'API aux chefs de l'unité concernée.
+    """
+    if not is_valid_upload_signature(filename, request.args.get('expires'), request.args.get('signature')):
+        abort(403)
+    response = send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Cache-Control'] = 'private, max-age=3600'
+    return response
 
 if __name__ == '__main__':
     try:

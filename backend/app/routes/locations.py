@@ -1,26 +1,24 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db 
+from services.permissions import login_required, get_group_name
 import requests
 locations_bp = Blueprint('locations', __name__)
 
 @locations_bp.route('/api/locations', methods=['GET'])
+@login_required
 def get_locations():
     """
     Récupère les lieux de camp du groupe + les lieux marqués comme "partagés"
     """
-    group_name = request.args.get('group_name')
-    
+    group_name = get_group_name(g.user)
+
     try:
         db = get_db()
-        
-        # Filtre Supabase : "Lieux de mon groupe" OU "Lieux partagés"
-        if group_name:
-            # La syntaxe .or_ de Supabase
-            filtre = f"group_name.eq.{group_name},is_shared.eq.true"
-            res = db.table('camp_locations').select('*').or_(filtre).execute()
-        else:
-            # Sécurité si le front-end n'envoie pas de groupe
-            res = db.table('camp_locations').select('*').execute()
+
+        # Filtre Supabase : "Lieux de mon groupe" OU "Lieux partagés".
+        # Le nom est mis entre guillemets car il peut contenir des virgules ou apostrophes.
+        filtre = f'group_name.eq."{group_name}",is_shared.eq.true'
+        res = db.table('camp_locations').select('*').or_(filtre).execute()
             
         return jsonify({"status": "success", "data": res.data}), 200
         
@@ -30,10 +28,8 @@ def get_locations():
         return jsonify({"error": "Erreur serveur"}), 500
 
 @locations_bp.route('/api/locations', methods=['POST', 'OPTIONS'])
+@login_required
 def add_location():
-    if request.method == 'OPTIONS':
-        return '', 200
-        
     data = request.json or {}
     
     # 1. On récupère l'adresse envoyée par le front-end
@@ -78,7 +74,7 @@ def add_location():
             'contact_info': data.get('contact_info'),
             'description': data.get('description'),
             'is_shared': data.get('is_shared', False),
-            'group_name': data.get('group_name'),
+            'group_name': get_group_name(g.user),
             'latitude': lat, # Les coordonnées trouvées par Python
             'longitude': lon
         }).execute()

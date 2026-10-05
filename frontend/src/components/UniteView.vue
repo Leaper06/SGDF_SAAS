@@ -559,6 +559,12 @@ const handleFicheUpload = async (event) => {
     }
 }
 
+// Ouvre la fiche sanitaire dans un nouvel onglet (lien signé fourni par l'API, valable 24 h)
+const consulterFiche = () => {
+    if (!selectedMember.value?.ficheUrl) return
+    window.open(selectedMember.value.ficheUrl, '_blank', 'noopener')
+}
+
 const handlePhotoUpload = async (event) => {
     const file = event.target.files[0]
     if (!file || !selectedMember.value) return

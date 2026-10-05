@@ -1,6 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
+// src/api/supabase.js
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_KEY || ''
+// Le temps réel Supabase est désactivé : il utilisait la clé secrète du projet,
+// qui donne un accès total à la base et ne doit jamais être envoyée au navigateur
+// (Supabase refuse d'ailleurs cette clé côté navigateur).
+// Ce client inactif garde les mêmes méthodes pour que les stores fonctionnent sans changement.
+const createDisabledChannel = () => ({
+    on() { return this },
+    subscribe() { return this },
+    send() { return Promise.resolve('disabled') }
+})
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = {
+    channel: () => createDisabledChannel(),
+    removeChannel: () => {}
+}

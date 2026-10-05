@@ -10,3 +10,6 @@ test_*.py
 backup_donnees_polymaitrise.sql
 # Réglages locaux Claude Code
 .claude/settings.local.json
+# Données d'exécution (fiches sanitaires, responsables de créneaux) : jamais dans git
+backend/app/uploads/
+backend/app/data/

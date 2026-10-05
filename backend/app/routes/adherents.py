@@ -1,14 +1,21 @@
 import logging
 import re
 from datetime import datetime, timezone
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, g
 from database import get_db
 from services.session_manager import get_user_session
 from services.sgdf_adherents import scrape_liste_adherents
+from services.permissions import (
+    login_required, forbidden, can_access_adherent, get_unit_adherent_ids, sign_upload_url,
+)
 import os
 from werkzeug.utils import secure_filename
 
 adherents_bp = Blueprint('adherents', __name__)
+
+# Formats acceptés pour les fiches sanitaires (un fichier .html servi par notre domaine
+# permettrait d'exécuter du code dans le navigateur des autres chefs)
+ALLOWED_UPLOAD_EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.webp', '.heic'}
 
 @adherents_bp.route('/api/adherents', methods=['GET'])
 def get_adherents():
@@ -152,26 +159,40 @@ def sync_adherents():
         return jsonify({"error": "Erreur lors de la synchronisation (Session peut-être expirée)"}), 401
 
 @adherents_bp.route('/api/adherents/extras', methods=['GET'])
+@login_required
 def get_adherent_extras():
     """
-    Récupère les métadonnées locales (photos, progression) des adhérents 
+    Récupère les métadonnées locales (photos, progression) des adhérents de l'unité
     stockées dans la base de données Supabase.
+    Les fichiers sont renvoyés sous forme de liens signés valables 24 h.
     """
     try:
+        adherent_ids = list(get_unit_adherent_ids(g.user))
+        if not adherent_ids:
+            return jsonify({"status": "success", "data": {}}), 200
+
         db = get_db()
-        res = db.table('adherent_extras').select('*').execute()
-        extras = {row['adherent_id']: row for row in res.data}
+        res = db.table('adherent_extras').select('*').in_('adherent_id', adherent_ids).execute()
+        extras = {}
+        for row in res.data:
+            row['fiche_url'] = sign_upload_url(row.get('fiche_url'))
+            row['photo_url'] = sign_upload_url(row.get('photo_url'))
+            extras[row['adherent_id']] = row
         return jsonify({"status": "success", "data": extras}), 200
     except Exception as e:
         logging.error(f"Erreur récupération extras : {e}")
         return jsonify({"error": "Erreur base de données"}), 500
 
 @adherents_bp.route('/api/adherents/<adherent_id>/upload', methods=['POST'])
+@login_required
 def upload_adherent_fiche(adherent_id):
     """
     Gère l'upload d'un fichier (ex: fiche sanitaire) pour un adhérent spécifique.
     Sauvegarde le fichier localement et met à jour l'URL dans Supabase.
     """
+    if not can_access_adherent(g.user, adherent_id):
+        return forbidden()
+
     if 'file' not in request.files:
         return jsonify({"error": "Aucun fichier envoyé"}), 400
         
@@ -179,12 +200,16 @@ def upload_adherent_fiche(adherent_id):
     if file.filename == '':
         return jsonify({"error": "Nom de fichier vide"}), 400
         
+    if os.path.splitext(file.filename)[1].lower() not in ALLOWED_UPLOAD_EXTENSIONS:
+        return jsonify({"error": "Format non accepté (PDF ou image uniquement)"}), 400
+
     try:
         filename = secure_filename(f"{adherent_id}_{file.filename}")
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         
-        file_url = f"{request.host_url}uploads/{filename}"
+        # On stocke un chemin relatif : le lien signé est généré à chaque lecture
+        file_url = f"/uploads/{filename}"
         
         db = get_db()
         existing = db.table('adherent_extras').select('id').eq('adherent_id', adherent_id).execute()
@@ -197,20 +222,21 @@ def upload_adherent_fiche(adherent_id):
                 "fiche_url": file_url
             }).execute()
             
-        return jsonify({"status": "success", "url": file_url}), 200
+        return jsonify({"status": "success", "url": sign_upload_url(file_url)}), 200
 
     except Exception as e:
         logging.error(f"Erreur lors de l'upload de la fiche pour {adherent_id} : {e}")
         return jsonify({"error": "Erreur serveur lors de la sauvegarde"}), 500
 
 @adherents_bp.route('/api/adherents/<adherent_id>/progression', methods=['PUT', 'OPTIONS'])
+@login_required
 def update_adherent_progression(adherent_id):
     """
     Met à jour ou crée la progression personnelle (symbole et action)
     d'un adhérent spécifique dans Supabase.
     """
-    if request.method == 'OPTIONS':
-        return '', 200
+    if not can_access_adherent(g.user, adherent_id):
+        return forbidden()
 
     try:
         data = request.json or {}

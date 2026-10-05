@@ -1,17 +1,19 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.permissions import login_required, forbidden, can_access_tent, get_group_name
 
 tents_bp = Blueprint('tents', __name__)
 
 @tents_bp.route('/api/tents/<tent_id>/incident', methods=['PUT', 'OPTIONS'])
+@login_required
 def update_tent_incident(tent_id):
     """
     Gère la déclaration d'un incident ou la réparation d'une tente
     en utilisant la table d'historique 'tent_incidents'.
     """
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+    if not can_access_tent(g.user, tent_id):
+        return forbidden()
+
     data = request.json or {}
     etat_recu = data.get('etat', '')
     notes = data.get('notes_incident', '')
@@ -42,6 +44,7 @@ def update_tent_incident(tent_id):
 
 
 @tents_bp.route('/api/tents/damaged', methods=['GET'])
+@login_required
 def get_damaged_tents():
     """
     Récupère les tentes abîmées ET va chercher la description 
@@ -50,7 +53,7 @@ def get_damaged_tents():
     try:
         db = get_db()
         # On récupère toutes les tentes signalées comme abîmées
-        tents_res = db.table('tents').select('*').eq('status', 'abimee').execute()
+        tents_res = db.table('tents').select('*').eq('status', 'abimee').eq('group_name', get_group_name(g.user)).execute()
         tents = tents_res.data
         
         # Pour chaque tente, on va chercher son dernier incident non réparé

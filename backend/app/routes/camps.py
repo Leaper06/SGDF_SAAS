@@ -1,8 +1,9 @@
 import logging
 import threading
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_db
 from services.session_manager import get_user_session
+from services.permissions import login_required, forbidden, can_access_camp
 
 
 camps_bp = Blueprint('camps', __name__)
@@ -83,13 +84,17 @@ def create_camp():
     db = get_db()
     try:
         data = request.json
+        template_id = data.get("template_id")
+        if template_id and not can_access_camp(user_data, template_id, allow_global_template=True):
+            return forbidden()
+
         nouveau_camp = {
             "name": data.get("name"),
             "location": data.get("location"),
             "start_date": data.get("startDate") or data.get("start_date"),
             "end_date": data.get("endDate") or data.get("end_date"),
             "unit_name": unit_name,
-            "unit_id": data.get("unit_id") or unit_id,
+            "unit_id": unit_id,
             "is_template": False
         }
         
@@ -97,7 +102,6 @@ def create_camp():
         nouveau_camp_obj = response.data[0]
         nouveau_camp_id = nouveau_camp_obj['id']
         
-        template_id = data.get("template_id")
         if template_id:
             from datetime import datetime, timedelta
             
@@ -155,10 +159,13 @@ def create_camp():
 
 
 @camps_bp.route('/api/camps/<camp_id>', methods=['PUT'])
+@login_required
 def update_camp(camp_id):
     """
     Met à jour les informations générales d'un camp existant.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     try:
         data = request.json
         infos_maj = {
@@ -176,11 +183,14 @@ def update_camp(camp_id):
 
 
 @camps_bp.route('/api/camps/<camp_id>', methods=['DELETE'])
+@login_required
 def delete_camp(camp_id):
     """
     Supprime un camp. 
     Nécessite la suppression préalable des activités associées pour respecter l'intégrité référentielle.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     try:
         db = get_db()
         db.table('planning_slots').delete().eq('camp_id', camp_id).execute()
@@ -206,6 +216,9 @@ def invite_guest(camp_id):
     if not adherent_id_invite:
         return jsonify({"status": "error", "message": "Numéro d'adhérent requis"}), 400
 
+    if not can_access_camp(user_data, camp_id):
+        return forbidden()
+
     try:
         db = get_db()
         existing = db.table('camp_guests').select('*').eq('camp_id', camp_id).eq('adherent_id', adherent_id_invite).execute()
@@ -222,12 +235,15 @@ def invite_guest(camp_id):
         return jsonify({"status": "error", "message": "Erreur serveur interne"}), 500
     
 @camps_bp.route('/api/camps/<camp_id>/roster', methods=['GET'])
+@login_required
 def get_camp_roster(camp_id):
     """
     Récupère la liste de tous les membres (jeunes et chefs) 
     appartenant à l'unité de ce camp spécifique, 
     ainsi que les chefs invités (guests) enregistrés pour ce camp.
     """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
     try:
         db = get_db()
         
@@ -289,6 +305,9 @@ def make_template(camp_id):
     user_data = get_user_session()
     if not user_data:
         return jsonify({"status": "error", "message": "Non autorisé"}), 401
+
+    if not can_access_camp(user_data, camp_id):
+        return forbidden()
 
     try:
         db = get_db()
