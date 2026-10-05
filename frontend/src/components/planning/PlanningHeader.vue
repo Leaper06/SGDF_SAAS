@@ -4,7 +4,8 @@
     <p class="text-sm font-light text-blue-100 dark:text-gray-300 mt-1 transition-colors">Planning du week-end</p>
   </div>
   
-  <div class="bg-white dark:bg-gray-800 px-4 py-3 flex justify-center items-center border-b border-gray-100 dark:border-gray-700 shadow-sm z-10 shrink-0 transition-colors">
+  <!-- relative z-30 : au-dessus de la barre des jours (sticky z-20), sinon le menu ⋮ passe dessous -->
+  <div class="bg-white dark:bg-gray-800 px-4 py-3 flex justify-center items-center border-b border-gray-100 dark:border-gray-700 shadow-sm relative z-30 shrink-0 transition-colors">
     <div class="max-w-5xl mx-auto w-full flex justify-between items-center">
       <button @click="$emit('goBack')" class="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
