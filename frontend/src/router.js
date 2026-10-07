@@ -34,4 +34,19 @@ router.beforeEach((to, from, next) => {
   }
 })
 
+// --- SEO : adresse officielle (canonique) de chaque page ---
+// Une seule canonique fixe ("/") faisait passer /login et /mentions-legales pour des doublons
+// d'une page d'accueil qui, elle, redirige : Google n'indexait alors pas ces pages.
+const SITE_URL = 'https://polymaitrise.fr'
+
+router.afterEach((to) => {
+  let canonical = document.querySelector('link[rel="canonical"]')
+  if (!canonical) {
+    canonical = document.createElement('link')
+    canonical.rel = 'canonical'
+    document.head.appendChild(canonical)
+  }
+  canonical.href = SITE_URL + to.path
+})
+
 export default router
