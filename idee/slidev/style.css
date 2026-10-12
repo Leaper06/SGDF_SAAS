@@ -1,0 +1,145 @@
+/* Styles communs de la présentation PolyMaîtrise */
+:root {
+  --pm-blue: #004267;
+  --pm-orange: #e85d22;
+  --pm-violet: #5b2b82;
+  --pm-green: #16a34a;
+}
+
+.slidev-layout h1 {
+  color: var(--pm-blue);
+  font-weight: 900;
+  font-size: 1.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.slidev-layout .subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+/* Étiquette de module en haut à droite */
+.module-tag {
+  position: absolute;
+  top: 1.6rem;
+  right: 2rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--pm-blue);
+}
+.module-tag.orange { background: var(--pm-orange); }
+.module-tag.violet { background: var(--pm-violet); }
+.module-tag.green { background: var(--pm-green); }
+
+/* Étapes numérotées du tutoriel */
+.steps {
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.step {
+  counter-increment: step;
+  position: relative;
+  padding-left: 2.2rem;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  color: #1f2937;
+}
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  background: var(--pm-orange);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.step b { color: var(--pm-blue); }
+
+/* Encadré conseil */
+.tip {
+  margin-top: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 4px solid var(--pm-green);
+  background: #f0fdf4;
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: #14532d;
+}
+.tip.warn {
+  border-left-color: var(--pm-orange);
+  background: #fff7ed;
+  color: #7c2d12;
+}
+
+/* Bouton cité dans le texte */
+.btn {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 0.35rem;
+  background: #e0ecf4;
+  color: var(--pm-blue);
+  font-weight: 800;
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+/* Cartes de la partie présentation */
+.card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border-top: 4px solid var(--pm-blue);
+}
+.card h3 {
+  font-weight: 900;
+  font-size: 1.05rem;
+  margin-bottom: 0.35rem;
+}
+.card p, .card li {
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: #374151;
+}
+
+/* Diapo de section */
+.section-slide h1 {
+  color: #fff !important;
+  font-size: 2.6rem !important;
+}
+.section-slide .section-number {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+.section-slide p {
+  color: #fff;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+/* Couverture : titre en blanc sur la photo */
+.slidev-layout.cover h1 {
+  color: #fff;
+  font-size: 3.2rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
