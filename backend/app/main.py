@@ -48,6 +48,14 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Taille maximale d'un fichier envoyé (même valeur que client_max_body_size dans nginx.conf)
+MAX_UPLOAD_SIZE = 15 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = MAX_UPLOAD_SIZE
+
+@app.errorhandler(413)
+def file_too_large(error):
+    return jsonify({"status": "error", "error": "Fichier trop volumineux (15 Mo maximum)"}), 413
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     """

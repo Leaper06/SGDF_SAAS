@@ -1,4 +1,5 @@
 import math
+from collections import Counter
 import logging
 from flask import Blueprint, request, jsonify, g
 from database import get_db
@@ -8,6 +9,40 @@ from services.permissions import (
 )
 
 intendance_bp = Blueprint('intendance', __name__)
+
+
+def build_shopping_list(recipe_ids, adults, children):
+    """
+    Additionne les ingrédients d'une liste de recettes pour un effectif donné.
+    Une recette présente dans plusieurs repas compte autant de fois qu'elle apparaît.
+    Quantités arrondies à l'unité supérieure, liste triée par nom d'ingrédient.
+    """
+    if not recipe_ids:
+        return []
+    occurrences = Counter(recipe_ids)
+    ing_res = get_db().table('recipe_ingredients').select(
+        'recipe_id, qty_adult, qty_child, ingredients(name, unit_type, category)'
+    ).in_('recipe_id', list(occurrences)).execute()
+
+    totals = {}
+    for item in ing_res.data:
+        ing_info = item['ingredients']
+        if not ing_info:
+            continue
+        qty_raw = ((item.get('qty_adult') or 0) * adults + (item.get('qty_child') or 0) * children) \
+            * occurrences[item['recipe_id']]
+        entry = totals.setdefault(ing_info['name'], {
+            'name': ing_info['name'],
+            'qty_raw': 0,
+            'unit': ing_info['unit_type'],
+            'category': ing_info.get('category', 'Autre')
+        })
+        entry['qty_raw'] += qty_raw
+
+    result = [{'name': e['name'], 'qty': math.ceil(e['qty_raw']), 'unit': e['unit'], 'category': e['category']}
+              for e in totals.values()]
+    result.sort(key=lambda x: x['name'])
+    return result
 
 @intendance_bp.route('/api/recipes', methods=['GET'])
 def get_recipes():
@@ -181,42 +216,8 @@ def get_shopping_list(meal_id):
         children = int(request.args.get('children', 0))
 
         mr_res = db.table('meal_recipes').select('recipe_id').eq('meal_id', meal_id).execute()
-        if not mr_res.data:
-            return jsonify({"status": "success", "data": []}), 200
-
         recipe_ids = [item['recipe_id'] for item in mr_res.data]
-        ing_res = db.table('recipe_ingredients').select(
-            'qty_adult, qty_child, ingredients(name, unit_type, category)'
-        ).in_('recipe_id', recipe_ids).execute()
-
-        shopping_dict = {}
-
-        for item in ing_res.data:
-            ing_info = item['ingredients']
-            if not ing_info:
-                continue
-                
-            ing_name = ing_info['name']
-            unit = ing_info['unit_type']
-            category = ing_info.get('category', 'Autre')
-
-            qty_raw = (item.get('qty_adult', 0) * adults) + (item.get('qty_child', 0) * children)
-            qty = math.ceil(qty_raw)
-
-            if ing_name in shopping_dict:
-                shopping_dict[ing_name]['qty'] = math.ceil(shopping_dict[ing_name]['qty_raw_accumulated'] + qty_raw)
-                shopping_dict[ing_name]['qty_raw_accumulated'] += qty_raw
-            else:
-                shopping_dict[ing_name] = {
-                    'name': ing_name,
-                    'qty': qty,
-                    'qty_raw_accumulated': qty_raw, 
-                    'unit': unit,
-                    'category': category
-                }
-
-        result = [{'name': v['name'], 'qty': v['qty'], 'unit': v['unit'], 'category': v['category']} for v in shopping_dict.values()]
-        result.sort(key=lambda x: x['name'])
+        result = build_shopping_list(recipe_ids, adults, children)
 
         return jsonify({"status": "success", "data": result}), 200
 
@@ -250,39 +251,7 @@ def get_camp_shopping_list(camp_id):
 
         mr_res = db.table('meal_recipes').select('recipe_id').in_('meal_id', meal_ids).execute()
         recipe_ids = [item['recipe_id'] for item in mr_res.data]
-        if not recipe_ids:
-            return jsonify({"status": "success", "data": []}), 200
-
-        ing_res = db.table('recipe_ingredients').select(
-            'qty_adult, qty_child, ingredients(name, unit_type, category)'
-        ).in_('recipe_id', recipe_ids).execute()
-
-        shopping_dict = {}
-
-        for item in ing_res.data:
-            ing_info = item['ingredients']
-            if not ing_info: continue
-                
-            ing_name = ing_info['name']
-            unit = ing_info['unit_type']
-            category = ing_info.get('category', 'Autre')
-
-            qty_raw = (item.get('qty_adult', 0) * adults) + (item.get('qty_child', 0) * children)
-            
-            if ing_name in shopping_dict:
-                shopping_dict[ing_name]['qty'] = math.ceil(shopping_dict[ing_name]['qty_raw_accumulated'] + qty_raw)
-                shopping_dict[ing_name]['qty_raw_accumulated'] += qty_raw
-            else:
-                shopping_dict[ing_name] = {
-                    'name': ing_name,
-                    'qty': math.ceil(qty_raw),
-                    'qty_raw_accumulated': qty_raw,
-                    'unit': unit,
-                    'category': category
-                }
-
-        result = [{'name': v['name'], 'qty': v['qty'], 'unit': v['unit'], 'category': v['category']} for v in shopping_dict.values()]
-        result.sort(key=lambda x: x['name'])
+        result = build_shopping_list(recipe_ids, adults, children)
 
         return jsonify({"status": "success", "data": result}), 200
 

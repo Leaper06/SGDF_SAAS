@@ -1,43 +1,15 @@
-import os
-import json
 import logging
 from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.slot_responsibles import load_slot_responsibles, set_slot_responsible
+from services.deletion import delete_planning_slots
+from services.replace_rows import replace_rows
 from services.permissions import (
     login_required, forbidden, can_access_camp,
     get_camp_id_of_slot, get_camp_id_of_activity,
 )
 
 planning_bp = Blueprint('planning', __name__)
-
-SLOTS_RESP_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'slot_responsibles.json')
-
-def load_slot_responsibles():
-    if not os.path.exists(SLOTS_RESP_FILE):
-        return {}
-    try:
-        with open(SLOTS_RESP_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-def save_slot_responsible(slot_id, responsible_names):
-    if not slot_id:
-        return
-    resps = load_slot_responsibles()
-    if isinstance(responsible_names, list):
-        resp_str = ", ".join([str(n).strip() for n in responsible_names if str(n).strip()])
-    else:
-        resp_str = str(responsible_names).strip() if responsible_names else ''
-        
-    if resp_str:
-        resps[str(slot_id)] = resp_str
-    elif str(slot_id) in resps:
-        del resps[str(slot_id)]
-        
-    os.makedirs(os.path.dirname(SLOTS_RESP_FILE), exist_ok=True)
-    with open(SLOTS_RESP_FILE, 'w', encoding='utf-8') as f:
-        json.dump(resps, f, ensure_ascii=False, indent=2)
 
 @planning_bp.route('/api/planning_slots', methods=['POST'])
 @login_required
@@ -61,7 +33,7 @@ def create_planning_slot():
         response = get_db().table('planning_slots').insert(nouveau_creneau).execute()
         if response.data and responsible_name:
             slot_id = response.data[0]['id']
-            save_slot_responsible(slot_id, responsible_name)
+            set_slot_responsible(slot_id, responsible_name)
 
         return jsonify({"status": "success", "data": response.data}), 201
 
@@ -112,9 +84,9 @@ def delete_planning_slot(slot_id):
     if not can_access_camp(g.user, get_camp_id_of_slot(slot_id)):
         return forbidden()
     try:
-        response = get_db().table('planning_slots').delete().eq('id', slot_id).execute()
-        save_slot_responsible(slot_id, None)
-        return jsonify({"status": "success", "data": response.data}), 200
+        # Supprime aussi le repas, la fiche d'activité et le responsable du créneau
+        delete_planning_slots([slot_id])
+        return jsonify({"status": "success"}), 200
     except Exception as e:
         logging.error(f"Erreur lors de la suppression du créneau : {e}")
         return jsonify({"status": "error", "message": "Erreur serveur interne"}), 500
@@ -140,7 +112,7 @@ def update_planning_slot(slot_id):
         response = get_db().table('planning_slots').update(infos_maj).eq('id', slot_id).execute()
         
         if "responsible_name" in data:
-            save_slot_responsible(slot_id, data.get("responsible_name"))
+            set_slot_responsible(slot_id, data.get("responsible_name"))
 
         return jsonify({"status": "success", "data": response.data}), 200
 
@@ -206,25 +178,23 @@ def save_activity(activity_id):
             "imaginary_and_objectives": data.get('imaginary_and_objectives')
         }).eq('id', activity_id).execute()
 
-        db.table('activity_materials').delete().eq('activity_id', activity_id).execute()
-        materials = data.get('materials', [])
-        if materials:
-            mats_to_insert = [{"activity_id": activity_id, "item_name": m['item_name'], "is_checked": m.get('is_checked', False)} for m in materials]
-            db.table('activity_materials').insert(mats_to_insert).execute()
+        materials = [
+            {"activity_id": activity_id, "item_name": m['item_name'], "is_checked": m.get('is_checked', False)}
+            for m in data.get('materials', [])
+        ]
+        replace_rows('activity_materials', 'activity_id', activity_id, materials)
 
-        db.table('activity_steps').delete().eq('activity_id', activity_id).execute()
-        steps = data.get('steps', [])
-        if steps:
-            steps_to_insert = []
-            for i, s in enumerate(steps):
-                steps_to_insert.append({
-                    "activity_id": activity_id,
-                    "title": s['title'],
-                    "description": s.get('description', ''),
-                    "duration_minutes": s.get('duration_minutes', 15),
-                    "order_index": i 
-                })
-            db.table('activity_steps').insert(steps_to_insert).execute()
+        steps = [
+            {
+                "activity_id": activity_id,
+                "title": s['title'],
+                "description": s.get('description', ''),
+                "duration_minutes": s.get('duration_minutes', 15),
+                "order_index": i
+            }
+            for i, s in enumerate(data.get('steps', []))
+        ]
+        replace_rows('activity_steps', 'activity_id', activity_id, steps)
 
         return jsonify({"status": "success", "message": "Activité sauvegardée"}), 200
 
@@ -257,11 +227,8 @@ def manage_activity_responsibles(activity_id):
             data = request.json
             adherent_ids = data.get('adherent_ids', [])
             
-            db.table('activity_responsibles').delete().eq('activity_id', activity_id).execute()
-            
             inserts = [{"activity_id": activity_id, "adherent_id": str(aid)} for aid in adherent_ids]
-            if inserts:
-                db.table('activity_responsibles').insert(inserts).execute()
+            replace_rows('activity_responsibles', 'activity_id', activity_id, inserts, key='adherent_id')
                 
             return jsonify({"status": "success", "message": "Responsables mis à jour"}), 200
         except Exception as e:

@@ -119,18 +119,28 @@ export const logout = () => {
   userToken.value = null
   userEmail.value = null
   unitId.value = null
+  unitName.value = "Mon Unité"
+  chefAdherentId.value = null
+  chefBranch.value = 'Inconnue'
   needsIdentification.value = false
   isDemoMode.value = false // On remet l'application en mode réel
   
+  // Un autre chef (d'une autre unité) peut se connecter ensuite sur le même appareil :
+  // on efface tout ce qui concerne l'unité (sauf la page où revenir après une session expirée)
   localStorage.removeItem('sgdf_token')
   localStorage.removeItem('sgdf_email')
   localStorage.removeItem('sgdf_needs_id') 
   localStorage.removeItem('sgdf_chef_id')      
   localStorage.removeItem('sgdf_chef_branch')
   localStorage.removeItem('sgdf_unit_id')
+  localStorage.removeItem('sgdf_unit_name')
+  localStorage.removeItem('sgdf_equipages')
 
-  // Vide le cache hors-ligne : un autre chef pourrait se connecter sur le même appareil
+  // Vide le cache hors-ligne
   if ('caches' in window) caches.delete('api-cache')
+
+  // Les stores qui gardent des données de l'unité en mémoire se vident (voir adherentsStore.js)
+  window.dispatchEvent(new CustomEvent('user-logged-out'))
   
   router.push('/login')
 }

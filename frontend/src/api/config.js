@@ -44,6 +44,7 @@ const ensureJsonResponse = (response) => {
     if (response.ok || contentType.includes('application/json')) return response
     let message = 'La requête n\'a pas pu aboutir.'
     if (response.status === 429) message = 'Trop de tentatives de connexion. Réessayez dans une minute.'
+    else if (response.status === 413) message = 'Fichier trop volumineux (15 Mo maximum)'
     else if (response.status >= 500) message = 'Le serveur est momentanément indisponible. Réessayez dans un instant.'
     return jsonErrorResponse(response.status, message)
 }

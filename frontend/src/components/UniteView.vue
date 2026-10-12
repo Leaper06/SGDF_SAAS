@@ -437,7 +437,8 @@ import {
 } from '../stores/adherentsStore.js'
 import { 
     userToken, loginToSGDF, isLoggingIn, loginError, userEmail, 
-    needsIdentification, chefAdherentId, unitName, groupName, chefBranch, logout 
+    needsIdentification, chefAdherentId, unitName, groupName, chefBranch, logout,
+    isDemoMode
 } from '../stores/authStore.js'
 import { API_BASE_URL } from '../api/config.js'
 import IntranetLoginModal from './IntranetLoginModal.vue'
@@ -534,11 +535,22 @@ const triggerFiche = () => {
     if (ficheInput.value) ficheInput.value.click()
 }
 
+// Taille maximale d'une fiche (même limite que le serveur)
+const MAX_FICHE_SIZE = 15 * 1024 * 1024
+
 const handleFicheUpload = async (event) => {
     const file = event.target.files[0]
+    // Permet de re-sélectionner le même fichier après une erreur
+    event.target.value = ''
     if (!file || !selectedMember.value) return
+    if (file.size > MAX_FICHE_SIZE) {
+        alert("Fichier trop volumineux (15 Mo maximum). Réduisez la taille de la photo ou du PDF.")
+        return
+    }
     const formData = new FormData()
     formData.append('file', file)
+    // Accord de l'autorité parentale (case cochée), vérifié aussi par le serveur
+    formData.append('consentement_parental', String(rgpdAccepte.value))
     try {
         const response = await fetch(`${API_BASE_URL}/adherents/${selectedMember.value.id}/upload`, {
             method: 'POST',
@@ -553,6 +565,8 @@ const handleFicheUpload = async (event) => {
                 adherentsList.value[index].ficheUrl = json.url
                 adherentsList.value[index].hasFiche = true
             }
+        } else {
+            alert("La fiche n'a pas été enregistrée : " + (json.error || "erreur inconnue"))
         }
     } catch (e) {
         console.error("Erreur upload fiche :", e)
@@ -603,9 +617,35 @@ const sauvegarderProgression = async () => {
     }
 }
 
-const confirmerIdentite = (chef) => {
-    chefAdherentId.value = chef.id
-    localStorage.setItem('sgdf_chef_id', chef.id)
+// Première connexion : le chef indique qui il est dans la liste de son unité.
+// Le serveur l'enregistre (chef_mappings) : liens personnels et camps où il est invité en dépendent.
+const confirmerIdentite = async (chef) => {
+    if (isDemoMode.value) {
+        chefAdherentId.value = chef.id
+        needsIdentification.value = false
+        return
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/chef/identify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adherent_id: chef.id })
+        })
+        const json = await response.json()
+        if (json.status !== 'success') {
+            alert("Identification impossible : " + (json.error || "erreur inconnue"))
+            return
+        }
+        // Nouveau token qui contient le numéro d'adhérent
+        userToken.value = json.token
+        localStorage.setItem('sgdf_token', json.token)
+        chefAdherentId.value = chef.id
+        localStorage.setItem('sgdf_chef_id', chef.id)
+        needsIdentification.value = false
+        localStorage.setItem('sgdf_needs_id', 'false')
+    } catch (e) {
+        console.error("Erreur identification :", e)
+    }
 }
 
 onMounted(() => {

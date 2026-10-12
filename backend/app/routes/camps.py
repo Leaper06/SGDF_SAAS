@@ -3,7 +3,8 @@ import threading
 from flask import Blueprint, request, jsonify, g
 from database import get_db
 from services.session_manager import get_user_session
-from services.permissions import login_required, forbidden, can_access_camp
+from services.deletion import delete_camp as delete_camp_and_content
+from services.permissions import login_required, forbidden, can_access_camp, get_user_adherent_id
 
 
 camps_bp = Blueprint('camps', __name__)
@@ -20,10 +21,12 @@ def get_all_camps():
         return jsonify({"status": "error", "message": "Non autorisé"}), 401
         
     unit_name = user_data["unit_name"]
-    adherent_id = user_data.get("adherent_id")
     db = get_db()
     
     try:
+        # Le token ne contient le numéro d'adhérent qu'après une reconnexion suivant
+        # l'identification : on le retrouve aussi dans chef_mappings (camps où le chef est invité)
+        adherent_id = get_user_adherent_id(user_data)
         response_unit = db.table('camps').select('*').eq('unit_name', unit_name).or_('is_template.eq.false,is_template.is.null').execute()
         camps_list = response_unit.data
 
@@ -59,7 +62,13 @@ def get_templates():
     try:
         db = get_db()
         # "unit_id.is.null" = global templates, "unit_id.eq.XXX" = unit templates
-        res = db.table('camps').select('*').eq('is_template', True).or_(f'unit_id.is.null,unit_id.eq.{unit_id}').execute()
+        query = db.table('camps').select('*').eq('is_template', True)
+        if unit_id:
+            query = query.or_(f'unit_id.is.null,unit_id.eq.{unit_id}')
+        else:
+            # Unité inconnue (ex : intranet indisponible à la connexion) : modèles globaux seulement
+            query = query.is_('unit_id', 'null')
+        res = query.execute()
         templates_list = res.data or []
         # Tri: templates globaux en premier, puis alphabétique
         templates_list.sort(key=lambda x: (x.get('unit_id') is not None, x.get('name', '')))
@@ -186,16 +195,13 @@ def update_camp(camp_id):
 @login_required
 def delete_camp(camp_id):
     """
-    Supprime un camp. 
-    Nécessite la suppression préalable des activités associées pour respecter l'intégrité référentielle.
+    Supprime un camp et tout son contenu (créneaux, repas, présences, invités, matériel...).
     """
     if not can_access_camp(g.user, camp_id):
         return forbidden()
     try:
-        db = get_db()
-        db.table('planning_slots').delete().eq('camp_id', camp_id).execute()
-        response = db.table('camps').delete().eq('id', camp_id).execute()
-        return jsonify({"status": "success", "data": response.data}), 200
+        deleted = delete_camp_and_content(camp_id)
+        return jsonify({"status": "success", "data": deleted}), 200
     except Exception as e:
         logging.error(f"Erreur suppression camp : {e}")
         return jsonify({"status": "error", "message": "Erreur serveur interne"}), 500

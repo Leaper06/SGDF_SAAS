@@ -1,11 +1,12 @@
 import logging
 from flask import Blueprint, jsonify, request, current_app, g
 from database import get_db
-from services.session_manager import get_user_session, create_jwt_token, ACTIVE_SESSIONS
+from services.session_manager import get_user_session, create_jwt_token, remember_intranet_session
 from services.unit_members import save_unit_and_members
 from services.sgdf_adherents import scrape_liste_adherents
 from services.permissions import (
     login_required, forbidden, can_access_adherent, get_unit_adherent_ids, sign_upload_url,
+    get_user_adherent_id,
 )
 import os
 from werkzeug.utils import secure_filename
@@ -61,7 +62,7 @@ def get_adherents():
             "status": "success", 
             "data": raw_adherents, 
             "unit_name": unit_name,
-            "adherent_id": user_data.get("adherent_id")
+            "adherent_id": get_user_adherent_id(user_data)
         }), 200
 
     except Exception as e:
@@ -84,8 +85,8 @@ def sync_adherents():
     password = data.get('password')
     session_http = user_data.get("http")
     
-    # Si le serveur a redémarré (session_http = None) ou si l'utilisateur envoie un password
-    if (not session_http or password) and password:
+    # Mot de passe intranet fourni (session intranet expirée ou absente) : on ouvre une nouvelle session
+    if password:
         from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session, ServerBusyError
 
         try:
@@ -97,13 +98,9 @@ def sync_adherents():
             
         session_http = create_authenticated_session(cookies)
         
-        # On met à jour le dictionnaire en mémoire
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            token = auth_header.split(" ")[1]
-            if token not in ACTIVE_SESSIONS:
-                ACTIVE_SESSIONS[token] = {}
-            ACTIVE_SESSIONS[token]["http"] = session_http
+        # On garde la nouvelle session intranet en mémoire pour ce token
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        remember_intranet_session(token, session_http)
             
     if not session_http:
         return jsonify({"error": "Session expirée, veuillez fournir votre mot de passe"}), INTRANET_LOGIN_REQUIRED
@@ -126,12 +123,11 @@ def sync_adherents():
                 "email": user_data.get("email"),
                 "unit_name": unit_name,
                 "unit_id": unit_id,
-                "adherent_id": user_data.get("adherent_id"),
+                "adherent_id": get_user_adherent_id(user_data),
             })
             response["unit_id"] = unit_id
             # La session intranet gardée en mémoire suit le nouveau token
-            old_token = request.headers.get('Authorization', '').replace('Bearer ', '')
-            ACTIVE_SESSIONS[response["token"]] = ACTIVE_SESSIONS.get(old_token, {"http": session_http})
+            remember_intranet_session(response["token"], session_http)
 
         return jsonify(response), 200
         
@@ -183,6 +179,11 @@ def upload_adherent_fiche(adherent_id):
         
     if os.path.splitext(file.filename)[1].lower() not in ALLOWED_UPLOAD_EXTENSIONS:
         return jsonify({"error": "Format non accepté (PDF ou image uniquement)"}), 400
+
+    # Données de santé d'un mineur : le chef doit confirmer l'accord de l'autorité parentale
+    if request.form.get('consentement_parental') != 'true':
+        return jsonify({"error": "Accord de l'autorité parentale requis"}), 400
+    logging.info(f"Accord parental confirmé par {g.user.get('email')} pour la fiche de l'adhérent {adherent_id}")
 
     try:
         filename = secure_filename(f"{adherent_id}_{file.filename}")

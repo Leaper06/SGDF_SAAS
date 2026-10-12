@@ -1,6 +1,7 @@
 import logging
 from flask import Blueprint, request, jsonify, g
 from database import get_db
+from services.replace_rows import replace_rows
 from services.permissions import (
     login_required, forbidden, can_access_camp, can_access_tent, get_group_name,
 )
@@ -41,19 +42,21 @@ def get_tents():
                 mon_debut = camp_res.data[0]['start_date']
                 ma_fin = camp_res.data[0]['end_date'] if camp_res.data[0].get('end_date') else mon_debut
 
-                autres_camps_res = db.table('camps').select('id, start_date, end_date').neq('id', camp_id).execute()
-                
-                camps_en_meme_temps = []
-                for c in autres_camps_res.data:
-                    son_debut = c['start_date']
-                    sa_fin = c['end_date'] if c.get('end_date') else son_debut
-                    
-                    if mon_debut <= sa_fin and ma_fin >= son_debut:
-                        camps_en_meme_temps.append(c['id'])
+                # Autres camps qui chevauchent ces dates, filtrés par la base
+                # (un camp sans date de fin est considéré comme durant un seul jour)
+                autres_camps_res = db.table('camps').select('id') \
+                    .neq('id', camp_id) \
+                    .lte('start_date', ma_fin) \
+                    .or_(f'end_date.gte."{mon_debut}",and(end_date.is.null,start_date.gte."{mon_debut}")') \
+                    .execute()
+                camps_en_meme_temps = [c['id'] for c in autres_camps_res.data]
+                tent_ids = [t['id'] for t in tentes]
 
-                if camps_en_meme_temps:
-                    reserv_res = db.table('camp_tents').select('tent_id').in_('camp_id', camps_en_meme_temps).execute()
-                    tentes_prises = [r['tent_id'] for r in reserv_res.data]
+                if camps_en_meme_temps and tent_ids:
+                    # Seules les tentes du groupe nous intéressent
+                    reserv_res = db.table('camp_tents').select('tent_id') \
+                        .in_('camp_id', camps_en_meme_temps).in_('tent_id', tent_ids).execute()
+                    tentes_prises = {r['tent_id'] for r in reserv_res.data}
 
                     for t in tentes:
                         if t['id'] in tentes_prises:
@@ -118,10 +121,8 @@ def manage_camp_tents(camp_id):
         group_tent_ids = {t['id'] for t in group_tents.data}
         selected_tents = [t_id for t_id in selected_tents if t_id in group_tent_ids]
 
-        db.table('camp_tents').delete().eq('camp_id', camp_id).execute()
         inserts = [{"camp_id": camp_id, "tent_id": t_id} for t_id in selected_tents]
-        if inserts:
-            db.table('camp_tents').insert(inserts).execute()
+        replace_rows('camp_tents', 'camp_id', camp_id, inserts, key='tent_id')
             
         return jsonify({"status": "success", "message": "Tentes mises à jour"}), 200
 
@@ -175,10 +176,8 @@ def manage_attendance(camp_id):
         data = request.json
         present_ids = data.get('present_ids', [])
         
-        db.table('camp_attendance').delete().eq('camp_id', camp_id).execute()
         inserts = [{"camp_id": camp_id, "adherent_id": str(p_id)} for p_id in present_ids]
-        if inserts:
-            db.table('camp_attendance').insert(inserts).execute()
+        replace_rows('camp_attendance', 'camp_id', camp_id, inserts, key='adherent_id')
             
         return jsonify({"status": "success", "message": "Présences mises à jour"}), 200
 
@@ -212,18 +211,13 @@ def manage_camp_materials(camp_id):
             data = request.json
             items = data.get('items', [])
             
-            # Remplacement destructif de la liste du camp
-            db.table('camp_materials').delete().eq('camp_id', camp_id).execute()
-            
-            if items:
-                inserts = [{
-                    "camp_id": camp_id,
-                    "name": item['name'],
-                    "is_checked": item.get('is_checked', False)
-                } for item in items if item.get('name')]
-                
-                if inserts:
-                    db.table('camp_materials').insert(inserts).execute()
+            # Remplacement de la liste du camp (nouvelles lignes écrites avant d'effacer les anciennes)
+            inserts = [{
+                "camp_id": camp_id,
+                "name": item['name'],
+                "is_checked": item.get('is_checked', False)
+            } for item in items if item.get('name')]
+            replace_rows('camp_materials', 'camp_id', camp_id, inserts)
                     
             res = db.table('camp_materials').select('*').eq('camp_id', camp_id).execute()
             return jsonify({"status": "success", "data": res.data or []}), 200

@@ -1,10 +1,13 @@
 import uuid
+import logging
 from flask import Blueprint, request, jsonify
 from database import get_db
 from services.sgdf_auth import get_sgdf_cookies, create_authenticated_session, ServerBusyError
 from services.sgdf_adherents import scrape_liste_adherents
 from services.unit_members import save_unit_and_members
-from services.session_manager import ACTIVE_SESSIONS, get_user_session
+from services.session_manager import (
+    get_user_session, create_jwt_token, remember_intranet_session, get_intranet_session,
+)
 
 # On crée le "mini-routeur" pour l'authentification
 auth_bp = Blueprint('auth', __name__)
@@ -57,17 +60,10 @@ def login():
         "unit_id": unit_id,
         "adherent_id": chef_adherent_id
     }
-    from services.session_manager import create_jwt_token
     session_token = create_jwt_token(payload_data)
 
-    # On garde la session HTTP en mémoire pour le scraping immédiat (si besoin)
-    ACTIVE_SESSIONS[session_token] = {
-        "http": session_http,
-        "unit_name": unit_name,
-        "unit_id": unit_id,
-        "email": username,
-        "adherent_id": chef_adherent_id
-    }
+    # On garde la session HTTP en mémoire pour la synchronisation des adhérents
+    remember_intranet_session(session_token, session_http)
     
     return jsonify({
         "message": "Connexion réussie",
@@ -97,14 +93,24 @@ def identify_chef():
     unit_name = user_data['unit_name']
 
     try:
-        get_db().table('chef_mappings').insert({
+        # upsert (l'e-mail est la clé) : un chef peut corriger une identification erronée
+        get_db().table('chef_mappings').upsert({
             'email': email,
             'adherent_id': adherent_id,
             'unit_name': unit_name
         }).execute()
-        
-        user_data['adherent_id'] = adherent_id
-        
-        return jsonify({"status": "success"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Erreur identification du chef {email} : {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+    # Nouveau token contenant le numéro d'adhérent ; la session intranet en mémoire le suit
+    new_token = create_jwt_token({
+        "email": email,
+        "unit_name": unit_name,
+        "unit_id": user_data.get("unit_id"),
+        "adherent_id": adherent_id
+    })
+    old_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    remember_intranet_session(new_token, get_intranet_session(old_token))
+
+    return jsonify({"status": "success", "token": new_token, "adherent_id": adherent_id}), 200

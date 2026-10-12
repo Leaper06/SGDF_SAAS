@@ -185,6 +185,12 @@ export const syncAdherents = async (password = null) => {
 export const equipages = ref([])
 export const showCreateEquipageModal = ref(false)
 
+// À la déconnexion, on oublie les membres et équipages de l'unité gardés en mémoire
+window.addEventListener('user-logged-out', () => {
+    adherentsList.value = []
+    equipages.value = []
+})
+
 export const initEquipages = () => {
     const saved = localStorage.getItem('sgdf_equipages')
     if (saved) {
