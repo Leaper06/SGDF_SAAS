@@ -67,7 +67,9 @@ const handleSessionExpiration = () => {
 onMounted(() => {
   window.addEventListener('session-expired', handleSessionExpiration)
   fetchCamps()
-  chargerCatalogueRecettes()
+  // Catalogue de recettes préchargé (utile hors-ligne) uniquement pour un utilisateur connecté :
+  // inutile sur la page de connexion, et le tiroir des recettes le recharge à l'ouverture
+  if (userToken.value) chargerCatalogueRecettes()
 })
 
 onUnmounted(() => {

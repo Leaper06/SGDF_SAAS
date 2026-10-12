@@ -1,8 +1,12 @@
+import hashlib
+import hmac
 import logging
+import os
 from flask import Blueprint, request, jsonify, g
 from database import get_db
 from services.slot_responsibles import load_slot_responsibles, set_slot_responsible
 from services.deletion import delete_planning_slots
+from services.session_manager import JWT_SECRET
 from services.replace_rows import replace_rows
 from services.permissions import (
     login_required, forbidden, can_access_camp,
@@ -61,12 +65,15 @@ def get_camp_slots(camp_id):
             
         slots = response.data
         resps = load_slot_responsibles()
+        filled_ids = slots_with_content(slots)
         for slot in slots:
             slot_id_str = str(slot['id'])
             if slot_id_str in resps:
                 slot['responsible_name'] = resps[slot_id_str]
             else:
                 slot['responsible_name'] = slot.get('responsible_name', '')
+            # Fiche d'activité ou menu déjà rempli : l'interface prévient avant de supprimer le créneau
+            slot['has_content'] = slot['id'] in filled_ids
 
         return jsonify({"status": "success", "data": slots}), 200
 
@@ -74,6 +81,105 @@ def get_camp_slots(camp_id):
         logging.error(f"Erreur de récupération du planning : {e}")
         return jsonify({"status": "error", "message": "Erreur serveur interne"}), 500
 
+
+def slots_with_content(slots):
+    """
+    Identifiants des créneaux dont la fiche d'activité (étapes, matériel, imaginaire)
+    ou le menu (recettes) a déjà été rempli.
+    """
+    db = get_db()
+    filled = set()
+
+    activity_to_slot = {s['activity_id']: s['id'] for s in slots if s.get('activity_id')}
+    if activity_to_slot:
+        activity_ids = list(activity_to_slot)
+        used = {row['activity_id'] for table in ('activity_steps', 'activity_materials')
+                for row in db.table(table).select('activity_id').in_('activity_id', activity_ids).execute().data}
+        used |= {a['id'] for a in db.table('activities').select('id, imaginary_and_objectives').in_('id', activity_ids).execute().data
+                 if (a.get('imaginary_and_objectives') or '').strip()}
+        filled |= {activity_to_slot[a] for a in used}
+
+    slot_ids = [s['id'] for s in slots]
+    if slot_ids:
+        meals = db.table('meals').select('id, planning_slot_id').in_('planning_slot_id', slot_ids).execute().data
+        meal_to_slot = {m['id']: m['planning_slot_id'] for m in meals}
+        if meal_to_slot:
+            with_recipes = db.table('meal_recipes').select('meal_id').in_('meal_id', list(meal_to_slot)).execute().data
+            filled |= {meal_to_slot[r['meal_id']] for r in with_recipes}
+    return filled
+
+
+@planning_bp.route('/api/camps/<camp_id>/slots', methods=['PUT'])
+@login_required
+def save_camp_structure(camp_id):
+    """
+    Enregistre les changements de structure faits dans l'éditeur « à la chaîne » :
+      - `slots` : créneaux modifiés (avec leur id) ou nouveaux (id provisoire « nouveau-... »)
+      - `deleted_ids` : créneaux supprimés explicitement par ce chef
+    Un créneau absent de la requête n'est jamais supprimé : plusieurs chefs peuvent modifier
+    le planning en même temps sans effacer le travail des autres.
+    Fonctionne aussi pour un modèle de l'unité (les modèles communs ne sont pas modifiables).
+    Retourne la correspondance id provisoire → id définitif des créneaux créés.
+    """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
+    try:
+        db = get_db()
+        data = request.json or {}
+        incoming = data.get('slots', [])
+        existing_ids = {s['id'] for s in db.table('planning_slots').select('id').eq('camp_id', camp_id).execute().data}
+
+        to_update = [s for s in incoming if s.get('id') in existing_ids]
+        to_create = [s for s in incoming if s.get('id') not in existing_ids]
+
+        created = []
+        if to_create:
+            rows = db.table('planning_slots').insert([{
+                "camp_id": camp_id,
+                "title": s.get('title'),
+                "slot_type": s.get('slot_type'),
+                "start_time": s.get('start_time'),
+                "end_time": s.get('end_time')
+            } for s in to_create]).execute().data
+            created = [{"client_id": s.get('id'), "id": row['id']} for s, row in zip(to_create, rows)]
+
+        for s in to_update:
+            db.table('planning_slots').update({
+                "title": s.get('title'),
+                "start_time": s.get('start_time'),
+                "end_time": s.get('end_time')
+            }).eq('id', s['id']).execute()
+
+        # Seuls les créneaux de ce camp explicitement supprimés par ce chef sont retirés
+        delete_planning_slots([slot_id for slot_id in data.get('deleted_ids', []) if slot_id in existing_ids])
+
+        return jsonify({"status": "success", "created": created}), 200
+    except Exception as e:
+        logging.error(f"Erreur d'enregistrement du planning : {e}")
+        return jsonify({"status": "error", "message": "Erreur serveur interne"}), 500
+
+
+@planning_bp.route('/api/camps/<camp_id>/realtime', methods=['GET'])
+@login_required
+def get_realtime_config(camp_id):
+    """
+    Paramètres du temps réel (Supabase Realtime) pour ce camp, réservés aux chefs autorisés.
+    Le canal porte un nom secret dérivé du camp : seuls ceux à qui l'API l'a donné peuvent l'écouter.
+    Les messages ne contiennent aucune donnée (seulement « le planning a changé » et la présence).
+    """
+    if not can_access_camp(g.user, camp_id):
+        return forbidden()
+    publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
+    if not publishable_key:
+        return jsonify({"status": "success", "enabled": False}), 200
+    channel_secret = hmac.new(JWT_SECRET.encode(), f"planning:{camp_id}".encode(), hashlib.sha256).hexdigest()[:32]
+    return jsonify({
+        "status": "success",
+        "enabled": True,
+        "url": os.getenv("SUPABASE_URL"),
+        "key": publishable_key,
+        "channel": f"planning-{channel_secret}"
+    }), 200
 
 @planning_bp.route('/api/planning_slots/<slot_id>', methods=['DELETE'])
 @login_required

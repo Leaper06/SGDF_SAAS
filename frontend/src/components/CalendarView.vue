@@ -87,72 +87,14 @@
       </main>
 
       <!-- BOUTON FLOTTANT + -->
-      <button @click="selectionnerDate(new Date())" :class="[branchStyles.bg, 'absolute bottom-24 md:bottom-8 right-6 w-14 h-14 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform active:scale-95 z-30']">
+      <button @click="ouvrirAssistantWeekEnd()" :class="[branchStyles.bg, 'absolute bottom-24 md:bottom-8 right-6 w-14 h-14 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform active:scale-95 z-30']">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
       </button>
       
       <!-- MODALE DE CRÉATION (Avec comportement PC Pop-up au centre) -->
-      <transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95" enter-to-class="opacity-100 translate-y-0 md:scale-100" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0 md:scale-100" leave-to-class="opacity-0 translate-y-full md:translate-y-10 md:scale-95">
-        <div v-if="showAddModal" class="absolute inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center md:p-6">
-          <div class="absolute inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity" @click="fermerModal"></div>
-          
-          <div class="relative bg-white dark:bg-gray-800 w-full md:max-w-xl rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col pb-8 md:pb-6 z-10 transition-colors">
-            <div class="w-full flex justify-center py-4 md:hidden cursor-pointer" @click="fermerModal"><div class="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full"></div></div>
-            
-            <div class="px-6 md:pt-6 overflow-y-auto scrollbar-hide">
-              <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-extrabold text-gray-900 dark:text-white transition-colors">Planifier un événement</h2>
-                <button @click="fermerModal" class="hidden md:block text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </div>
-              
-              <!-- Tabs Journée / Week-end -->
-              <div class="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl mb-6 transition-colors">
-                <button @click="newEvent.type = 'journee'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', newEvent.type === 'journee' ? `bg-white dark:bg-gray-800 shadow-sm ${branchStyles.text}` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300']">Journée</button>
-                <button @click="newEvent.type = 'weekend'" :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', newEvent.type === 'weekend' ? `bg-white dark:bg-gray-800 shadow-sm ${branchStyles.text}` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300']">Week-end</button>
-              </div>
-
-                <!-- Formulaire -->
-              <div class="space-y-4">
-                <div class="w-full overflow-hidden">
-                  <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Modèle de planning (Optionnel)</label>
-                  <select v-model="newEvent.templateId" :class="['w-full truncate bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
-                    <option value="">-- Aucun modèle (Planning vide) --</option>
-                    <option v-for="tmpl in templatesList" :key="tmpl.id" :value="tmpl.id">
-                      {{ tmpl.name }} {{ tmpl.unit_id ? '(Personnalisé)' : '(Global)' }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Titre de l'événement</label>
-                  <input v-model="newEvent.name" type="text" placeholder="Ex: WE d'équipage" :class="['w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
-                </div>
-                <div class="flex gap-4">
-                  <div class="flex-1">
-                    <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Début</label>
-                    <input v-model="newEvent.startDate" type="date" :class="['w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
-                  </div>
-                  <div v-if="newEvent.type === 'weekend'" class="flex-1">
-                    <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Fin</label>
-                    <input v-model="newEvent.endDate" type="date" :class="['w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Lieu</label>
-                  <input v-model="newEvent.location" type="text" placeholder="Ex: Base de la Guiche" :class="['w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 text-gray-900 dark:text-white font-medium rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:bg-white dark:focus:bg-gray-800 transition-all', branchStyles.ring]">
-                </div>
-              </div>
-
-              <!-- Bouton Valider -->
-              <button @click="soumettreEvenement" :class="['w-full mt-8 text-lg py-4 rounded-xl transition-transform active:scale-95 shadow-md flex justify-center items-center gap-2 font-bold', branchStyles.btnSolid]">
-                Créer l'événement
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
+      <!-- Assistant de création : infos → composer chaque journée → ajuster -->
+      <PlanningWizard v-if="showPlanningWizard" mode="weekend" :start-date="wizardStartDate"
+        @cancel="showPlanningWizard = false" @done="onEvenementCree" />
     </div>
 </template>
 
@@ -161,14 +103,13 @@ import { formatWeekday, formatDay } from '../utils/helpers.js'
 import { computed, onMounted } from 'vue'
 import { userToken, loginToSGDF, isLoggingIn, loginError, chefBranch, isDemoMode } from '../stores/authStore.js'
 import { 
-  selectedCamp, campsList, templatesList, loading, currentDate, showCampMenu,
-  showAddModal, newEvent, showEditCampModal, editCampForm,
-  moisActuelTexte, campsDuMois, joursDuCalendrier, joursDuCamp,
-  changerMois, selectionnerDate, fermerModal, fetchCamps, fetchTemplates, 
-  soumettreEvenement, modifierCamp, fermerEditCampModal, 
-  soumettreModificationCamp, supprimerCamp 
+  selectedCamp, campsList, loading, currentDate, showCampMenu,
+  moisActuelTexte, campsDuMois, joursDuCalendrier,
+  changerMois, selectionnerDate, fetchCamps, fetchTemplates,
+  showPlanningWizard, wizardStartDate, ouvrirAssistantWeekEnd
 } from '../stores/campsStore.js'
 import { ouvrirPlanning } from '../stores/planningStore.js'
+import PlanningWizard from './planning/PlanningWizard.vue'
 
 // CALCUL DYNAMIQUE DES COULEURS AVEC LE DARK MODE INCLUS
 const branchStyles = computed(() => {
@@ -215,4 +156,10 @@ const gererClicJour = (jour) => {
 onMounted(async () => {
     await Promise.all([fetchTemplates(), fetchCamps()])
 })
+
+// Événement créé : on ouvre directement son planning (fiches d'activité, menus, effectifs...)
+const onEvenementCree = ({ camp }) => {
+    showPlanningWizard.value = false
+    if (camp) ouvrirPlanning(camp)
+}
 </script>

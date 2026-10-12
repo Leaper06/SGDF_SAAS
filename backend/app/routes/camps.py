@@ -82,7 +82,9 @@ def get_templates():
 @camps_bp.route('/api/camps', methods=['POST'])
 def create_camp():
     """
-    Crée un nouveau camp et copie les créneaux si un template_id est fourni.
+    Crée un nouveau camp (ou un modèle si is_template est vrai).
+    Les créneaux viennent soit d'un modèle (template_id), soit directement de la liste `slots`
+    composée dans l'assistant de création : [{title, slot_type, start_time, end_time}].
     """
     user_data = get_user_session()
     if not user_data:
@@ -104,7 +106,7 @@ def create_camp():
             "end_date": data.get("endDate") or data.get("end_date"),
             "unit_name": unit_name,
             "unit_id": unit_id,
-            "is_template": False
+            "is_template": bool(data.get("is_template"))
         }
         
         response = db.table('camps').insert(nouveau_camp).execute()
@@ -160,6 +162,16 @@ def create_camp():
                 if slots_to_copy:
                     db.table('planning_slots').insert(slots_to_copy).execute()
 
+        # Créneaux composés dans l'assistant (journées types, jours de modèles, ajustements)
+        composed_slots = [{
+            "camp_id": nouveau_camp_id,
+            "title": slot.get("title"),
+            "slot_type": slot.get("slot_type"),
+            "start_time": slot.get("start_time"),
+            "end_time": slot.get("end_time")
+        } for slot in data.get("slots") or [] if slot.get("title") and slot.get("start_time") and slot.get("end_time")]
+        if composed_slots:
+            db.table('planning_slots').insert(composed_slots).execute()
 
         return jsonify({"status": "success", "data": response.data}), 201
     except Exception as e:

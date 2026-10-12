@@ -1,16 +1,24 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import router from '../router.js'
 import { API_BASE_URL } from '../api/config.js'
 import { selectedCamp, joursDuCamp } from './campsStore.js'
 import { userToken, isDemoMode } from './authStore.js'
 import { chefs } from './adherentsStore.js'
 import { supabase } from '../api/supabase.js'
+import { demoSlotsByCamp } from './demoPlanningData.js'
 
 // ==========================================
 // ÉTAT GLOBAL (Variables)
 // ==========================================
 export const selectedSlot = ref(null)
 export const slotsList = ref([])
+
+// Mode Démo : toute modification du planning affiché est gardée en mémoire pour ce week-end
+watch(slotsList, (list) => {
+  if (isDemoMode.value && selectedCamp.value) {
+    demoSlotsByCamp[selectedCamp.value.id] = list.map(slot => ({ ...slot }))
+  }
+}, { deep: true })
 
 // Formulaires et modales des créneaux
 export const showEditSlotModal = ref(false)
@@ -122,38 +130,46 @@ const reFetchActivity = async () => {
   } catch (error) { console.error("Erreur de rafraîchissement temps réel :", error) }
 }
 
+// Planning d'exemple du mode Démo (les deux créneaux marqués « has_content » ont une fiche / un menu rempli)
+const genererCreneauxDemo = () => {
+  const d1 = new Date(selectedCamp.value?.start_date || new Date())
+  const d2 = new Date(d1); d2.setDate(d2.getDate() + 1)
+  let index = 0
+  const makeSlot = (dateObj, hStart, mStart, hEnd, mEnd, title, type, hasContent = false) => {
+    const s = new Date(dateObj); s.setHours(hStart, mStart, 0, 0)
+    const e = new Date(dateObj); e.setHours(hEnd, mEnd, 0, 0)
+    return { id: `demo-slot-${index++}-${Date.now()}`, title, slot_type: type, start_time: s.toISOString(), end_time: e.toISOString(), has_content: hasContent }
+  }
+  return [
+    // Samedi
+    makeSlot(d1, 14, 0, 14, 30, "Accueil & Rassemblement", "autre"),
+    makeSlot(d1, 14, 30, 16, 0, "Montage des tentes & Installation", "service"),
+    makeSlot(d1, 16, 0, 16, 30, "Goûter & Lancement de l'Imaginaire", "repas"),
+    makeSlot(d1, 16, 30, 18, 30, "Grand Jeu de piste en forêt", "jeu", true),
+    makeSlot(d1, 18, 30, 19, 30, "Temps libre & Douches", "autre"),
+    makeSlot(d1, 19, 30, 21, 0, "Dîner Trappeur & Concours Cuisine", "repas", true),
+    makeSlot(d1, 21, 0, 22, 30, "Veillée autour du feu", "jeu"),
+    makeSlot(d1, 22, 30, 23, 0, "Extinction des feux & Coucher", "service"),
+    // Dimanche
+    makeSlot(d2, 8, 0, 9, 0, "Petit-Déjeuner & Réveil", "repas"),
+    makeSlot(d2, 9, 0, 9, 30, "Temps Spirituel & Réflexion", "autre"),
+    makeSlot(d2, 9, 30, 11, 30, "Olympiades de Patrouille", "jeu"),
+    makeSlot(d2, 11, 30, 12, 0, "Rangement des affaires", "service"),
+    makeSlot(d2, 12, 0, 13, 30, "Déjeuner & Pique-Nique", "repas"),
+    makeSlot(d2, 13, 30, 15, 0, "Démontage du campement & Nettoyage", "service"),
+    makeSlot(d2, 15, 0, 16, 0, "Rassemblement de clôture & Départ", "autre")
+  ]
+}
+
+// Prévient le partage du planning (planningLive.js) qu'une modification vient d'être enregistrée
+const signalerModification = () => window.dispatchEvent(new CustomEvent('planning-modifie'))
+
 export const fetchSlots = async (campId) => {
   // === INTERCEPTION MODE DÉMO ===
+  // Créneaux gardés en mémoire par week-end (générés une seule fois) : les modifications persistent
   if (isDemoMode.value) {
-    const d1 = new Date(selectedCamp.value?.start_date || new Date())
-    const d2 = new Date(d1); d2.setDate(d2.getDate() + 1)
-    
-    const makeSlot = (dateObj, hStart, mStart, hEnd, mEnd, title, type) => {
-      const s = new Date(dateObj); s.setHours(hStart, mStart, 0)
-      const e = new Date(dateObj); e.setHours(hEnd, mEnd, 0)
-      return { id: `demo-slot-${Date.now()}-${Math.random().toString(36).substring(2,6)}`, title, slot_type: type, start_time: s.toISOString(), end_time: e.toISOString() }
-    }
-
-    slotsList.value = [
-      // Samedi
-      makeSlot(d1, 14, 0, 14, 30, "Accueil & Rassemblement", "rassemblement"),
-      makeSlot(d1, 14, 30, 16, 0, "Montage des tentes & Installation", "service"),
-      makeSlot(d1, 16, 0, 16, 30, "Goûter & Lancement de l'Imaginaire", "service"),
-      makeSlot(d1, 16, 30, 18, 30, "Grand Jeu de piste en forêt", "jeu"),
-      makeSlot(d1, 18, 30, 19, 30, "Temps libre & Douches", "temps_libre"),
-      makeSlot(d1, 19, 30, 21, 0, "Dîner Trappeur & Concours Cuisine", "repas"),
-      makeSlot(d1, 21, 0, 22, 30, "Veillée autour du feu", "veillée"),
-      makeSlot(d1, 22, 30, 23, 0, "Extinction des feux & Coucher", "nuit"),
-
-      // Dimanche
-      makeSlot(d2, 8, 0, 9, 0, "Petit-Déjeuner & Réveil", "repas"),
-      makeSlot(d2, 9, 0, 9, 30, "Temps Spirituel & Réflexion", "temps_spirituel"),
-      makeSlot(d2, 9, 30, 11, 30, "Olympiades de Patrouille", "jeu"),
-      makeSlot(d2, 11, 30, 12, 0, "Rangement des affaires", "service"),
-      makeSlot(d2, 12, 0, 13, 30, "Déjeuner & Pique-Nique", "repas"),
-      makeSlot(d2, 13, 30, 15, 0, "Démontage du campement & Nettoyage", "service"),
-      makeSlot(d2, 15, 0, 16, 0, "Rassemblement de clôture & Départ", "rassemblement")
-    ]
+    if (!demoSlotsByCamp[campId]) demoSlotsByCamp[campId] = genererCreneauxDemo()
+    slotsList.value = demoSlotsByCamp[campId].map(slot => ({ ...slot }))
     return
   }
   // =============================
@@ -285,7 +301,7 @@ export const soumettreModificationSlot = async () => {
     }
     const response = await fetch(`${API_BASE_URL}/planning_slots/${slotToEditId.value}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     const json = await response.json()
-    if (json.status === 'success') { fermerEditSlotModal(); await fetchSlots(selectedCamp.value.id) }
+    if (json.status === 'success') { fermerEditSlotModal(); await fetchSlots(selectedCamp.value.id); signalerModification() }
   } catch (error) { console.error("Erreur :", error) }
 }
 
@@ -293,6 +309,7 @@ export const decalerPlanning = (jourStr, minutesDelta = 15) => {
   const targetSlots = slotsParJour.value[jourStr]
   if (!targetSlots || targetSlots.length === 0) return
   
+  const requetes = []
   targetSlots.forEach(slot => {
     const s = new Date(slot.start_time)
     const e = new Date(slot.end_time)
@@ -302,7 +319,7 @@ export const decalerPlanning = (jourStr, minutesDelta = 15) => {
     slot.end_time = e.toISOString()
     
     if (!isDemoMode.value) {
-      fetch(`${API_BASE_URL}/planning_slots/${slot.id}`, {
+      requetes.push(fetch(`${API_BASE_URL}/planning_slots/${slot.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -312,9 +329,11 @@ export const decalerPlanning = (jourStr, minutesDelta = 15) => {
           end_time: slot.end_time,
           responsible_name: slot.responsible_name || ''
         })
-      }).catch(err => console.error("Erreur décalage API :", err))
+      }).catch(err => console.error("Erreur décalage API :", err)))
     }
   })
+  // Une fois tous les créneaux décalés, les autres chefs sont prévenus
+  Promise.all(requetes).then(signalerModification)
 }
 
 export const supprimerSlot = async (slotId) => {
@@ -328,7 +347,7 @@ export const supprimerSlot = async (slotId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/planning_slots/${slotId}`, { method: 'DELETE' })
       const json = await response.json()
-      if (json.status === 'success') await fetchSlots(selectedCamp.value.id)
+      if (json.status === 'success') { await fetchSlots(selectedCamp.value.id); signalerModification() }
     } catch (error) { console.error("Erreur :", error) }
   }
 }
